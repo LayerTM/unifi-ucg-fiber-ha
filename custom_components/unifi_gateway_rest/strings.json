@@ -1,0 +1,137 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "UniFi Gateway",
+        "description": "Connect to your UniFi OS gateway (UCG/UDM/UXG) on your local network.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "site": "Site",
+          "verify_ssl": "Verify SSL certificate",
+          "auth_method": "Authentication method"
+        },
+        "data_description": {
+          "host": "IP address or hostname of the gateway console.",
+          "site": "UniFi Network site name (usually 'default').",
+          "verify_ssl": "UniFi OS ships a self-signed certificate; leave off unless you pinned a CA."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure UniFi Gateway",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "site": "Site",
+          "verify_ssl": "Verify SSL certificate",
+          "auth_method": "Authentication method"
+        }
+      },
+      "api_key": {
+        "title": "API key",
+        "description": "Create a key in the UniFi OS UI: Settings → Control Plane → Integrations → Create API Key.",
+        "data": { "api_key": "API key" }
+      },
+      "password": {
+        "title": "Local account",
+        "description": "Use a local UniFi OS account (not a Ubiquiti SSO/cloud login).",
+        "data": { "username": "Username", "password": "Password" }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate",
+        "description": "Your saved credentials stopped working. Enter them again.",
+        "data": {
+          "api_key": "API key",
+          "username": "Username",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid authentication.",
+      "cannot_connect": "Failed to connect.",
+      "insufficient_permissions": "This credential cannot read the gateway API. Use a local account or a full-access API key.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This gateway is already configured.",
+      "reauth_successful": "Re-authentication was successful.",
+      "reconfigure_successful": "Reconfiguration was successful.",
+      "wrong_device": "The credentials are for a different gateway than the one configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": { "enable_controls": "Enable control actions (speedtest, restart)" },
+        "data_description": {
+          "enable_controls": "Adds write buttons. Requires write-capable auth (a local account, or an API key created with write scope)."
+        }
+      }
+    }
+  },
+  "selector": {
+    "auth_method": {
+      "options": {
+        "api_key": "API key (recommended, read-only)",
+        "password": "Local account (username / password)"
+      }
+    }
+  },
+  "exceptions": {
+    "action_auth_failed": { "message": "The action failed to authenticate. Re-check your credentials." },
+    "action_not_permitted": { "message": "This credential is not permitted to perform control actions. Use a write-capable account or API key." },
+    "action_cannot_connect": { "message": "Could not reach the gateway to perform the action." },
+    "action_failed": { "message": "The control action failed." }
+  },
+  "entity": {
+    "sensor": {
+      "cpu": { "name": "CPU utilization" },
+      "memory": { "name": "Memory utilization" },
+      "load_1": { "name": "Load average (1 min)" },
+      "load_5": { "name": "Load average (5 min)" },
+      "load_15": { "name": "Load average (15 min)" },
+      "uptime": { "name": "Uptime" },
+      "storage_usage": { "name": "Storage usage" },
+      "clients": { "name": "Clients" },
+      "clients_wired": { "name": "Wired clients" },
+      "clients_wireless": { "name": "Wireless clients" },
+      "network_version": { "name": "Network application version" },
+      "isp": { "name": "ISP" },
+      "isp_asn": { "name": "ISP ASN" },
+      "internet_latency": { "name": "Internet latency" },
+      "speedtest_download": { "name": "Speedtest download" },
+      "speedtest_upload": { "name": "Speedtest upload" },
+      "speedtest_ping": { "name": "Speedtest ping" },
+      "speedtest_last_run": { "name": "Speedtest last run" },
+      "active_wan": { "name": "Active WAN" },
+      "vpn_remote_active": { "name": "VPN remote users" },
+      "temperature": { "name": "{name} temperature" },
+      "wan_ip": { "name": "IP address" },
+      "wan_latency": { "name": "Latency" },
+      "wan_availability": { "name": "Availability" },
+      "wan_link_speed": { "name": "Link speed" },
+      "wan_throughput_rx": { "name": "Download throughput" },
+      "wan_throughput_tx": { "name": "Upload throughput" },
+      "wan_uptime": { "name": "Uptime" },
+      "wan_media": { "name": "Media" }
+    },
+    "binary_sensor": {
+      "internet": { "name": "Internet" },
+      "device_online": { "name": "Online" },
+      "overheating": { "name": "Overheating" },
+      "failover": { "name": "WAN failover active" },
+      "update_available": { "name": "Firmware update available" },
+      "vpn_site_to_site": { "name": "Site-to-site VPN" },
+      "wan_up": { "name": "Link" },
+      "wan_active": { "name": "Active uplink" },
+      "sfp_present": { "name": "Module present" },
+      "sfp_problem": { "name": "Module problem" }
+    },
+    "button": {
+      "run_speedtest": { "name": "Run speedtest" },
+      "restart": { "name": "Restart" }
+    }
+  }
+}

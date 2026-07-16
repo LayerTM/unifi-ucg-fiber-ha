@@ -1,0 +1,33 @@
+# Run: pip install pre-commit && pre-commit install
+repos:
+  - repo: local
+    hooks:
+      - id: secret-scan
+        name: secret / PII scan (block device data)
+        entry: python scripts/secret_scan.py
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: vendor-sync
+        name: aiounifigw vendored copy in sync with src/
+        entry: python scripts/vendor_aiounifigw.py
+        language: system
+        pass_filenames: false
+        files: ^src/aiounifigw/
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.20
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: [--maxkb=512]

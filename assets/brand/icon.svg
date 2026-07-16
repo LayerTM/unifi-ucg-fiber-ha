@@ -1,0 +1,59 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="40" y1="40" x2="472" y2="472" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0A63E4"/>
+      <stop offset="0.55" stop-color="#0891D1"/>
+      <stop offset="1" stop-color="#00C2C7"/>
+    </linearGradient>
+    <linearGradient id="fiber" x1="256" y1="330" x2="256" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#B6F4FF"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#CFF9FF" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#CFF9FF" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+  </defs>
+
+  <!-- app-tile background (full-bleed squircle; no transparent border to trim) -->
+  <rect x="0" y="0" width="512" height="512" rx="120" fill="url(#bg)"/>
+  <rect x="0" y="0" width="512" height="512" rx="120" fill="#FFFFFF" opacity="0.05"/>
+
+  <!-- WAN uplink glow -->
+  <circle cx="256" cy="132" r="70" fill="url(#glow)"/>
+
+  <!-- broadcast arcs above the WAN node -->
+  <g stroke="#EAFCFF" stroke-linecap="round" fill="none" opacity="0.9">
+    <path d="M210 108 a64 64 0 0 1 92 0" stroke-width="12"/>
+    <path d="M188 86 a96 96 0 0 1 136 0" stroke-width="12" opacity="0.6"/>
+  </g>
+
+  <!-- fiber uplink strand: gateway -> WAN node -->
+  <path d="M256 300 L256 158" stroke="#0A63E4" stroke-width="30" stroke-linecap="round" opacity="0.25" filter="url(#blur)"/>
+  <path d="M256 300 L256 158" stroke="url(#fiber)" stroke-width="18" stroke-linecap="round"/>
+
+  <!-- WAN node -->
+  <circle cx="256" cy="132" r="27" fill="#FFFFFF"/>
+  <circle cx="256" cy="132" r="12" fill="#0A63E4"/>
+
+  <!-- downlinks: gateway -> two clients -->
+  <g stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" opacity="0.92">
+    <path d="M228 344 L168 402"/>
+    <path d="M284 344 L344 402"/>
+  </g>
+
+  <!-- client nodes -->
+  <circle cx="160" cy="410" r="26" fill="#FFFFFF" opacity="0.92"/>
+  <circle cx="352" cy="410" r="26" fill="#FFFFFF" opacity="0.92"/>
+
+  <!-- gateway core (device) -->
+  <rect x="182" y="286" width="148" height="72" rx="24" fill="#FFFFFF"/>
+  <g fill="#0A63E4">
+    <circle cx="220" cy="322" r="9"/>
+    <circle cx="256" cy="322" r="9"/>
+    <circle cx="292" cy="322" r="9"/>
+  </g>
+</svg>

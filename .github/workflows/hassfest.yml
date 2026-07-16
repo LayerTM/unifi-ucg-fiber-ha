@@ -1,0 +1,14 @@
+name: hassfest
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "30 4 * * *"
+
+jobs:
+  hassfest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: home-assistant/actions/hassfest@master

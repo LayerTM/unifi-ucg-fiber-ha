@@ -1,0 +1,20 @@
+name: hacs
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "30 4 * * *"
+
+jobs:
+  hacs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hacs/action@main
+        with:
+          category: integration
+          # Brand icons ship in-repo (custom_components/unifi_gateway_rest/brand/)
+          # and are pending submission to home-assistant/brands; ignore the brands
+          # check until that PR merges, then remove this line.
+          ignore: brands

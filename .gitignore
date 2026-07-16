@@ -1,0 +1,37 @@
+# ── Secrets: NEVER commit (defense-in-depth; also covered by captures/.gitignore) ──
+**/.secrets.env
+.secrets.env
+*.secret
+*.secret.*
+*.pem
+*.key
+
+# ── Local device captures (raw dumps contain PII: WAN IP, MAC, serial, ISP) ──
+/captures/*
+!/captures/.gitignore
+!/captures/.secrets.env.example
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+dist/
+build/
+
+# ── Editor / OS ──
+.DS_Store
+.idea/
+.vscode/
+
+# ── Session / harness infra (never part of the deliverable) ──
+.maestri/
+.team-comm/

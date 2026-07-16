@@ -1,0 +1,7 @@
+# Raw captures contain PII (WAN IP, MAC, serial, ISP, SSID) — never commit them.
+# Only the PII-safe capability_summary.json may be shared/kept.
+# Everything under captures/ is local device data — never committed.
+# Only the gitignore and the (secret-free) template are tracked.
+*
+!.gitignore
+!.secrets.env.example

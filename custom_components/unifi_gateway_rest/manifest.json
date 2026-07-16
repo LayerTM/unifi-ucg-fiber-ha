@@ -1,0 +1,13 @@
+{
+  "domain": "unifi_gateway_rest",
+  "name": "UniFi Gateway (non-invasive)",
+  "codeowners": ["@LayerTM"],
+  "config_flow": true,
+  "documentation": "https://github.com/LayerTM/unifi-ucg-fiber-ha",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/LayerTM/unifi-ucg-fiber-ha/issues",
+  "quality_scale": "platinum",
+  "requirements": [],
+  "version": "0.1.0"
+}

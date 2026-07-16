@@ -1,0 +1,45 @@
+{
+  "data": [
+    {
+      "subsystem": "wlan",
+      "status": "ok",
+      "num_user": 27,
+      "num_guest": 0,
+      "num_ap": 4
+    },
+    {
+      "subsystem": "wan",
+      "status": "ok",
+      "isp_name": "Example ISP",
+      "isp_organization": "Example ISP",
+      "asn": 64512,
+      "wan_ip": "203.0.113.10",
+      "num_gw": 1
+    },
+    {
+      "subsystem": "www",
+      "status": "ok",
+      "speedtest_status": "Idle",
+      "speedtest_lastrun": 0,
+      "speedtest_ping": 0,
+      "xput_up": 0.0,
+      "xput_down": 0.0,
+      "latency": 37,
+      "drops": 1
+    },
+    {
+      "subsystem": "lan",
+      "status": "ok",
+      "num_user": 26,
+      "num_sw": 5
+    },
+    {
+      "subsystem": "vpn",
+      "status": "ok",
+      "site_to_site_enabled": false,
+      "remote_user_enabled": true,
+      "remote_user_num_active": 2,
+      "remote_user_num_inactive": 3
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "data": [
+    {
+      "type": "usw",
+      "model": "USMINI",
+      "name": "office-switch",
+      "mac": "aa:bb:cc:00:00:99",
+      "port_table": []
+    },
+    {
+      "type": "udm",
+      "model": "UDMA6A8",
+      "name": "UCG Fiber",
+      "mac": "aa:bb:cc:00:11:22",
+      "version": "5.1.19.33549",
+      "state": 1,
+      "uptime": 33507,
+      "overheating": false,
+      "num_sta": 51,
+      "system-stats": { "cpu": "20.9", "mem": "74.8", "uptime": "33507" },
+      "sys_stats": {
+        "loadavg_1": "1.99",
+        "loadavg_5": "2.49",
+        "loadavg_15": "2.77",
+        "mem_total": 3031826432,
+        "mem_used": 2267209728
+      },
+      "temperatures": [
+        { "name": "Local", "type": "board", "value": 47.25 },
+        { "name": "CPU", "type": "cpu", "value": 51.312 },
+        { "name": "PMIC", "type": "board", "value": 55.812 }
+      ],
+      "storage": [
+        { "name": "Backup", "mount_point": "/persistent", "type": "eMMC", "size": 2040373248, "used": 353435648 },
+        { "name": "Temporary", "mount_point": "/tmp", "type": "other", "size": 1073741824, "used": 425984 }
+      ],
+      "uptime_stats": {
+        "WAN": { "availability": 100.0, "latency_average": 27, "uptime": 33423 },
+        "WAN2": { "availability": 99.46, "latency_average": 19, "uptime": 3300 }
+      },
+      "wan1": {
+        "ifname": "eth0",
+        "name": "eth0",
+        "up": true,
+        "is_uplink": true,
+        "enable": true,
+        "ip": "203.0.113.10",
+        "netmask": "255.255.255.0",
+        "media": "2.5GE",
+        "speed": 2500,
+        "max_speed": 10000,
+        "latency": 40,
+        "availability": 100,
+        "rx_bytes": 26236632987,
+        "tx_bytes": 6137427436,
+        "rx_bytes-r": 47835,
+        "tx_bytes-r": 291538
+      },
+      "wan2": {
+        "ifname": "eth3",
+        "up": true,
+        "is_uplink": false,
+        "enable": false,
+        "ip": "203.0.113.20",
+        "media": "2.5GE",
+        "speed": 2500,
+        "max_speed": 10000,
+        "rx_bytes": 5648085,
+        "tx_bytes": 4494036,
+        "rx_bytes-r": 161,
+        "tx_bytes-r": 161
+      },
+      "port_table": [
+        { "port_idx": 6, "media": "SFP+", "up": false, "enable": true },
+        {
+          "port_idx": 7,
+          "media": "SFP+",
+          "up": true,
+          "enable": true,
+          "sfp_found": true,
+          "sfp_eeprom": true,
+          "sfp_vendor": "Ubiquiti Inc.",
+          "sfp_part": "DAC-SFP10-1M",
+          "sfp_serial": "EXAMPLE0001",
+          "sfp_rx_los": false,
+          "sfp_tx_fault": false
+        }
+      ]
+    }
+  ]
+}

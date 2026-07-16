@@ -1,0 +1,8 @@
+{
+  "mac": "aa:bb:cc:00:11:22",
+  "name": "UCG Fiber",
+  "hardware": { "shortname": "UCGF" },
+  "deviceState": "setup",
+  "hasInternet": true,
+  "firmwareVersion": null
+}

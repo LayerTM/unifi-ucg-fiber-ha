@@ -1,0 +1,51 @@
+{
+  "entity": {
+    "sensor": {
+      "cpu": { "default": "mdi:cpu-64-bit" },
+      "memory": { "default": "mdi:memory" },
+      "load_1": { "default": "mdi:gauge" },
+      "load_5": { "default": "mdi:gauge" },
+      "load_15": { "default": "mdi:gauge" },
+      "uptime": { "default": "mdi:timer-outline" },
+      "storage_usage": { "default": "mdi:harddisk" },
+      "clients": { "default": "mdi:account-multiple" },
+      "clients_wired": { "default": "mdi:ethernet" },
+      "clients_wireless": { "default": "mdi:wifi" },
+      "network_version": { "default": "mdi:information-outline" },
+      "isp": { "default": "mdi:earth" },
+      "isp_asn": { "default": "mdi:earth" },
+      "internet_latency": { "default": "mdi:timer-sand" },
+      "speedtest_download": { "default": "mdi:download-network" },
+      "speedtest_upload": { "default": "mdi:upload-network" },
+      "speedtest_ping": { "default": "mdi:timer-sand" },
+      "speedtest_last_run": { "default": "mdi:speedometer" },
+      "active_wan": { "default": "mdi:transit-connection-variant" },
+      "vpn_remote_active": { "default": "mdi:vpn" },
+      "temperature": { "default": "mdi:thermometer" },
+      "wan_ip": { "default": "mdi:ip-network" },
+      "wan_latency": { "default": "mdi:timer-sand" },
+      "wan_availability": { "default": "mdi:check-network" },
+      "wan_link_speed": { "default": "mdi:speedometer" },
+      "wan_throughput_rx": { "default": "mdi:download-network" },
+      "wan_throughput_tx": { "default": "mdi:upload-network" },
+      "wan_uptime": { "default": "mdi:timer-outline" },
+      "wan_media": { "default": "mdi:ethernet-cable" }
+    },
+    "binary_sensor": {
+      "internet": { "default": "mdi:web" },
+      "device_online": { "default": "mdi:lan-connect" },
+      "overheating": { "default": "mdi:thermometer-alert" },
+      "failover": { "default": "mdi:transit-connection-variant" },
+      "update_available": { "default": "mdi:package-up" },
+      "vpn_site_to_site": { "default": "mdi:vpn" },
+      "wan_up": { "default": "mdi:transit-connection" },
+      "wan_active": { "default": "mdi:check-decagram" },
+      "sfp_present": { "default": "mdi:expansion-card" },
+      "sfp_problem": { "default": "mdi:alert-circle" }
+    },
+    "button": {
+      "run_speedtest": { "default": "mdi:speedometer" },
+      "restart": { "default": "mdi:restart" }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "data": [
+    {
+      "version": "10.5.62",
+      "build": "atag_10.5.62_35177",
+      "name": "UCG Fiber",
+      "timezone": "Europe/Warsaw",
+      "update_available": false,
+      "previous_version": "10.5.54",
+      "console_display_version": "5.1.19"
+    }
+  ]
+}
