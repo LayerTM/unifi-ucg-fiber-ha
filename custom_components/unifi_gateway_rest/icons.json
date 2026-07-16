@@ -29,7 +29,9 @@
       "wan_throughput_rx": { "default": "mdi:download-network" },
       "wan_throughput_tx": { "default": "mdi:upload-network" },
       "wan_uptime": { "default": "mdi:timer-outline" },
-      "wan_media": { "default": "mdi:ethernet-cable" }
+      "wan_media": { "default": "mdi:ethernet-cable" },
+      "wan_total_rx": { "default": "mdi:download" },
+      "wan_total_tx": { "default": "mdi:upload" }
     },
     "binary_sensor": {
       "internet": { "default": "mdi:web" },

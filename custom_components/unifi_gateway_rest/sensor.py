@@ -16,6 +16,7 @@ from homeassistant.const import (
     PERCENTAGE,
     EntityCategory,
     UnitOfDataRate,
+    UnitOfInformation,
     UnitOfTemperature,
     UnitOfTime,
 )
@@ -262,6 +263,30 @@ WAN_SENSORS: tuple[GatewayWanSensorDescription, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
         entity_registry_enabled_default=False,
         value_fn=lambda w: w.media or None,
+    ),
+    GatewayWanSensorDescription(
+        key="total_rx",
+        translation_key="wan_total_rx",
+        device_class=SensorDeviceClass.DATA_SIZE,
+        native_unit_of_measurement=UnitOfInformation.BYTES,
+        suggested_unit_of_measurement=UnitOfInformation.GIGABYTES,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        suggested_display_precision=2,
+        value_fn=lambda w: w.rx_bytes,
+    ),
+    GatewayWanSensorDescription(
+        key="total_tx",
+        translation_key="wan_total_tx",
+        device_class=SensorDeviceClass.DATA_SIZE,
+        native_unit_of_measurement=UnitOfInformation.BYTES,
+        suggested_unit_of_measurement=UnitOfInformation.GIGABYTES,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        suggested_display_precision=2,
+        value_fn=lambda w: w.tx_bytes,
     ),
 )
 

@@ -115,7 +115,9 @@
       "wan_throughput_rx": { "name": "Download throughput" },
       "wan_throughput_tx": { "name": "Upload throughput" },
       "wan_uptime": { "name": "Uptime" },
-      "wan_media": { "name": "Media" }
+      "wan_media": { "name": "Media" },
+      "wan_total_rx": { "name": "Total downloaded" },
+      "wan_total_tx": { "name": "Total uploaded" }
     },
     "binary_sensor": {
       "internet": { "name": "Internet" },
