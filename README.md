@@ -1,7 +1,7 @@
 <h1 align="center">UniFi Gateway for Home Assistant (non-invasive)</h1>
 
 <p align="center">
-  <img src="assets/brand/banner.png" alt="UniFi Gateway — non-invasive gateway & WAN monitoring for Home Assistant" width="760">
+  <img src="https://raw.githubusercontent.com/LayerTM/unifi-ucg-fiber-ha/main/assets/brand/banner.png" alt="UniFi Gateway — non-invasive gateway & WAN monitoring for Home Assistant" width="760">
 </p>
 
 <p align="center">
