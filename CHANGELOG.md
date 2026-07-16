@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.3]
+
+### Added
+
+- **Configurable polling interval** in the integration Options (15–3600 s,
+  default 30) — previously fixed at 30 s.
+- **Guest** and **IoT** client-count sensors (from the WLAN health subsystem).
+  Diagnostic and disabled by default.
+
 ## [0.1.2]
 
 ### Added

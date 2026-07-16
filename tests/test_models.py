@@ -121,6 +121,8 @@ def test_health_fields(stat_health: dict[str, Any]) -> None:
     assert h.isp.asn_label == "AS64512"
     assert h.num_wired == 26
     assert h.num_wireless == 27
+    assert h.num_guest == 0
+    assert h.num_iot == 6
     assert h.num_ap == 4
     assert h.num_switch == 5
 

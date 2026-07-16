@@ -11,6 +11,8 @@
       "clients": { "default": "mdi:account-multiple" },
       "clients_wired": { "default": "mdi:ethernet" },
       "clients_wireless": { "default": "mdi:wifi" },
+      "clients_guest": { "default": "mdi:account-question" },
+      "clients_iot": { "default": "mdi:home-automation" },
       "network_version": { "default": "mdi:information-outline" },
       "isp": { "default": "mdi:earth" },
       "isp_asn": { "default": "mdi:earth" },

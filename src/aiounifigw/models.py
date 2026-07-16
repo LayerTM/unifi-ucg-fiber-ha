@@ -437,6 +437,7 @@ class Health:
     num_wired: int
     num_wireless: int
     num_guest: int
+    num_iot: int
     num_ap: int
     num_switch: int
 
@@ -465,6 +466,7 @@ class Health:
             num_wired=_i0(lan.get("num_user")),
             num_wireless=_i0(wlan.get("num_user")),
             num_guest=_i0(wlan.get("num_guest")),
+            num_iot=_i0(wlan.get("num_iot")),
             num_ap=_i0(wlan.get("num_ap")),
             num_switch=_i0(lan.get("num_sw")),
         )

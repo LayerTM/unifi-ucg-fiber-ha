@@ -18,12 +18,16 @@ from homeassistant.const import (
     CONF_HOST,
     CONF_PASSWORD,
     CONF_PORT,
+    CONF_SCAN_INTERVAL,
     CONF_USERNAME,
     CONF_VERIFY_SSL,
 )
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -47,9 +51,12 @@ from .const import (
     CONF_SITE,
     DEFAULT_ENABLE_CONTROLS,
     DEFAULT_PORT,
+    DEFAULT_SCAN_INTERVAL,
     DEFAULT_SITE,
     DEFAULT_VERIFY_SSL,
     DOMAIN,
+    MAX_SCAN_INTERVAL,
+    MIN_SCAN_INTERVAL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -221,11 +228,30 @@ def _title(identity: SystemIdentity, data: dict[str, Any]) -> str:
 
 
 class GatewayOptionsFlow(OptionsFlow):
-    """Options: opt in/out of control (write) entities."""
+    """Options: poll interval and opt-in control (write) entities."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             return self.async_create_entry(data=user_input)
-        default = self.config_entry.options.get(CONF_ENABLE_CONTROLS, DEFAULT_ENABLE_CONTROLS)
-        schema = vol.Schema({vol.Required(CONF_ENABLE_CONTROLS, default=default): bool})
+        options = self.config_entry.options
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_SCAN_INTERVAL,
+                    default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+                ): NumberSelector(
+                    NumberSelectorConfig(
+                        min=MIN_SCAN_INTERVAL,
+                        max=MAX_SCAN_INTERVAL,
+                        step=1,
+                        unit_of_measurement="s",
+                        mode=NumberSelectorMode.BOX,
+                    )
+                ),
+                vol.Required(
+                    CONF_ENABLE_CONTROLS,
+                    default=options.get(CONF_ENABLE_CONTROLS, DEFAULT_ENABLE_CONTROLS),
+                ): bool,
+            }
+        )
         return self.async_show_form(step_id="init", data_schema=schema)

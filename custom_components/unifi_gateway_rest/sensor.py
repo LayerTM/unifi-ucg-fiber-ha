@@ -126,6 +126,22 @@ SENSORS: tuple[GatewaySensorDescription, ...] = (
         value_fn=lambda d: d.health.num_wireless if d.health else None,
     ),
     GatewaySensorDescription(
+        key="clients_guest",
+        translation_key="clients_guest",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda d: d.health.num_guest if d.health else None,
+    ),
+    GatewaySensorDescription(
+        key="clients_iot",
+        translation_key="clients_iot",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda d: d.health.num_iot if d.health else None,
+    ),
+    GatewaySensorDescription(
         key="network_version",
         translation_key="network_version",
         entity_category=EntityCategory.DIAGNOSTIC,

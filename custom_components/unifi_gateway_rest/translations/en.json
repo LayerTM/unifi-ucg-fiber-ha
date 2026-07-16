@@ -64,8 +64,12 @@
     "step": {
       "init": {
         "title": "Options",
-        "data": { "enable_controls": "Enable control actions (speedtest, restart)" },
+        "data": {
+          "scan_interval": "Polling interval (seconds)",
+          "enable_controls": "Enable control actions (speedtest, restart)"
+        },
         "data_description": {
+          "scan_interval": "How often to poll the gateway (15–3600 s; default 30).",
           "enable_controls": "Adds write buttons. Requires write-capable auth (a local account, or an API key created with write scope)."
         }
       }
@@ -97,6 +101,8 @@
       "clients": { "name": "Clients" },
       "clients_wired": { "name": "Wired clients" },
       "clients_wireless": { "name": "Wireless clients" },
+      "clients_guest": { "name": "Guest clients" },
+      "clients_iot": { "name": "IoT clients" },
       "network_version": { "name": "Network application version" },
       "isp": { "name": "ISP" },
       "isp_asn": { "name": "ISP ASN" },

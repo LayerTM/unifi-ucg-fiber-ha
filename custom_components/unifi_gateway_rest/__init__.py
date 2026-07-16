@@ -91,7 +91,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GatewayConfigEntry) -> b
     except GwConnectionError as err:
         raise ConfigEntryNotReady(str(err)) from err
 
-    scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    scan_interval = int(entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
     coordinator = GatewayDataUpdateCoordinator(hass, entry, client, capabilities, scan_interval)
     await coordinator.async_config_entry_first_refresh()
 
