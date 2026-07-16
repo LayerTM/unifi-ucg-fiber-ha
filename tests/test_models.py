@@ -74,24 +74,32 @@ def test_device_failover_when_backup_active(stat_device: dict[str, Any]) -> None
     assert d.failover_active is True
 
 
-def test_device_sfp_only_present_modules(stat_device: dict[str, Any]) -> None:
+def test_device_sfp_both_ports(stat_device: dict[str, Any]) -> None:
     d = Device.from_api(_gateway(stat_device))
-    # port 6 has an empty cage (no module) -> skipped; port 7 has a DAC.
-    assert [p.port_idx for p in d.sfp_ports] == [7]
-    sfp = d.sfp_ports[0]
-    assert sfp.present is True
-    assert sfp.vendor == "Ubiquiti Inc."
-    assert sfp.part == "DAC-SFP10-1M"
-    assert sfp.rx_los is False
-    assert sfp.tx_fault is False
-    assert sfp.has_problem is False
+    # both physical SFP+ ports are surfaced; port 6 is empty, port 7 has a DAC.
+    assert [p.port_idx for p in d.sfp_ports] == [6, 7]
+    empty = d.sfp_ports[0]
+    assert empty.present is False
+    assert empty.part == ""
+    assert empty.has_problem is False
+    module = d.sfp_ports[1]
+    assert module.present is True
+    assert module.vendor == "Ubiquiti Inc."
+    assert module.part == "DAC-SFP10-1M"
+    assert module.rx_los is False
+    assert module.tx_fault is False
+    assert module.has_problem is False
 
 
 def test_sfp_problem_detection(stat_device: dict[str, Any]) -> None:
     gw = _gateway(stat_device)
-    gw["port_table"][1]["sfp_rx_los"] = True
+    gw["port_table"][1]["sfp_rx_los"] = True  # port 7 (the populated one)
     d = Device.from_api(gw)
-    assert d.sfp_ports[0].has_problem is True
+    port7 = next(p for p in d.sfp_ports if p.port_idx == 7)
+    assert port7.has_problem is True
+    # an empty port never reports a problem
+    port6 = next(p for p in d.sfp_ports if p.port_idx == 6)
+    assert port6.has_problem is False
 
 
 def test_device_uptime_since_uses_now(monkeypatch: pytest.MonkeyPatch, stat_device: dict) -> None:

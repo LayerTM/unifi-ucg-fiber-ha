@@ -117,11 +117,12 @@ class GatewaySfpEntity(CoordinatorEntity[GatewayDataUpdateCoordinator]):
         assert entry is not None
         self._attr_unique_id = f"{entry.unique_id}_sfp{port_idx}_{key}"
         port = self.port
+        has_module = bool(port and port.present)
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{entry.entry_id}_sfp{port_idx}")},
             via_device=(DOMAIN, entry.entry_id),
-            manufacturer=port.vendor if port and port.vendor else MANUFACTURER,
-            model=f"SFP module ({port.part})" if port and port.part else "SFP module",
+            manufacturer=port.vendor if has_module and port and port.vendor else MANUFACTURER,
+            model=(port.part if has_module and port and port.part else "SFP+ port"),
             name=f"SFP Port {port_idx}",
         )
 

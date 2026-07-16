@@ -33,7 +33,8 @@ def test_status_payload_shape(stat_device, stat_health, stat_sysinfo) -> None:  
     assert payload["active_wan"] == "WAN"
     assert payload["failover_active"] is False
     assert [w["id"] for w in payload["wans"]] == ["WAN", "WAN2"]
-    assert payload["sfp_ports"][0]["part"] == "DAC-SFP10-1M"
+    assert {p["port"] for p in payload["sfp_ports"]} == {6, 7}
+    assert any(p["part"] == "DAC-SFP10-1M" for p in payload["sfp_ports"])
 
 
 def test_env_helpers(monkeypatch: pytest.MonkeyPatch) -> None:

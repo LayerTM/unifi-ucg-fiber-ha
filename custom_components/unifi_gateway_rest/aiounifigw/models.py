@@ -215,11 +215,13 @@ class Wan:
 
 @dataclass(frozen=True, slots=True)
 class SfpPort:
-    """An SFP/SFP+ port with a module present (from the gateway ``port_table``).
+    """A physical SFP/SFP+ port (from the gateway ``port_table``).
 
+    Every SFP port on the device is surfaced; ``present`` reflects whether a
+    module is inserted (an empty cage is present=False, with empty vendor/part).
     UCG-Fiber firmware exposes presence + vendor/part + rx-LOS / tx-fault, but
     NOT optical DDM (rx/tx power, module temperature), so no optical sensors are
-    modelled. Only ports whose module is present are surfaced (capability-gated).
+    modelled.
     """
 
     port_idx: int
@@ -232,7 +234,7 @@ class SfpPort:
 
     @property
     def has_problem(self) -> bool:
-        return self.rx_los or self.tx_fault
+        return self.present and (self.rx_los or self.tx_fault)
 
     @classmethod
     def from_api(cls, d: dict[str, Any]) -> SfpPort:
@@ -310,13 +312,14 @@ class Device:
             up = uptime_stats.get(wan_id)
             wans.append(Wan.from_api(wan_id, wan_dict, up if isinstance(up, dict) else {}))
 
+        # Every physical SFP/SFP+ port is surfaced (the device has a fixed number
+        # of them); an empty cage reports present=False. Module details (vendor /
+        # part) only populate when a module is inserted.
         sfp_ports: list[SfpPort] = []
         for p in d.get("port_table") or []:
             if not isinstance(p, dict):
                 continue
-            media = _s(p.get("media"))
-            has_sfp_fields = any(str(k).startswith("sfp") for k in p)
-            if "SFP" in media.upper() and has_sfp_fields and _b(p.get("sfp_found")):
+            if "SFP" in _s(p.get("media")).upper():
                 sfp_ports.append(SfpPort.from_api(p))
 
         return cls(

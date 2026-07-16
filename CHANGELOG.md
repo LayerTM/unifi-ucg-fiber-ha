@@ -3,7 +3,16 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [0.1.0] — Unreleased
+## [0.1.1]
+
+### Changed
+
+- **SFP+ ports:** every physical SFP/SFP+ port is now surfaced as a sub-device
+  (previously only ports with a module inserted were shown). An empty cage
+  reports *module present = off*; vendor/part populate only when a module is
+  present. The UCG-Fiber now shows both of its SFP+ ports.
+
+## [0.1.0]
 
 Initial release. Non-invasive, read-only-by-default Home Assistant integration
 for UniFi OS gateways, verified on the UCG-Fiber.
