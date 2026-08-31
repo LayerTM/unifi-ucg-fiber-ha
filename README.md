@@ -14,7 +14,7 @@
 [![release](https://img.shields.io/github/v/release/LayerTM/unifi-ucg-fiber-ha?sort=semver&color=41BDF5)](https://github.com/LayerTM/unifi-ucg-fiber-ha/releases)
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![quality scale: platinum](https://img.shields.io/badge/quality%20scale-platinum-8A2BE2)](custom_components/unifi_gateway_rest/quality_scale.yaml)
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.6%2B-41BDF5?logo=home-assistant&logoColor=white)](https://www.home-assistant.io/)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.3%2B-41BDF5?logo=home-assistant&logoColor=white)](https://www.home-assistant.io/)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 
 [![tests](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/tests.yml/badge.svg)](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/tests.yml)
@@ -90,7 +90,9 @@ sub-device per WAN uplink and per populated SFP+ port.
   sub-device info.
 - **VPN** — site-to-site enabled and active remote-user count.
 
-Requires **Home Assistant 2026.6+** (Python 3.14). Configuration is through the
+Requires **Home Assistant 2025.3+** — the release that introduced
+`AddConfigEntryEntitiesCallback`, the newest core API this integration uses.
+Development and CI run against the current release. Configuration is through the
 UI; re-authentication and reconfiguration are supported.
 
 ## Installation

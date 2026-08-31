@@ -89,7 +89,11 @@ class GatewayWanEntity(CoordinatorEntity[GatewayDataUpdateCoordinator]):
         self._attr_unique_id = f"{entry.unique_id}_{wan_id.lower()}_{key}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{entry.entry_id}_{wan_id.lower()}")},
-            via_device=(DOMAIN, entry.entry_id),
+            # `via_device` left the DeviceInfo TypedDict in 2026.8 in favour of
+            # `via_device_id`, which needs a device-registry id we do not have here.
+            # It stays functional until its removal in 2027.8, and it is the only
+            # form that also works on the 2025.3 floor this integration supports.
+            via_device=(DOMAIN, entry.entry_id),  # type: ignore[typeddict-unknown-key]
             manufacturer=MANUFACTURER,
             model="WAN uplink",
             name=wan_id,
@@ -120,7 +124,11 @@ class GatewaySfpEntity(CoordinatorEntity[GatewayDataUpdateCoordinator]):
         has_module = bool(port and port.present)
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"{entry.entry_id}_sfp{port_idx}")},
-            via_device=(DOMAIN, entry.entry_id),
+            # `via_device` left the DeviceInfo TypedDict in 2026.8 in favour of
+            # `via_device_id`, which needs a device-registry id we do not have here.
+            # It stays functional until its removal in 2027.8, and it is the only
+            # form that also works on the 2025.3 floor this integration supports.
+            via_device=(DOMAIN, entry.entry_id),  # type: ignore[typeddict-unknown-key]
             manufacturer=port.vendor if has_module and port and port.vendor else MANUFACTURER,
             model=(port.part if has_module and port and port.part else "SFP+ port"),
             name=f"SFP Port {port_idx}",

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aiounifigw"
-version = "0.1.3"
+version = "0.1.4"
 description = "Async client for the Ubiquiti UniFi OS gateway (UCG-Fiber / UCG / UDM / UXG) local REST API — non-invasive monitoring with opt-in control."
 readme = "README.md"
 license = "MIT"
@@ -22,7 +22,7 @@ dependencies = ["aiohttp>=3.9", "yarl>=1.9"]
 
 [project.optional-dependencies]
 cli = ["typer>=0.12", "rich>=13"]              # unifi-gateway CLI
-mcp = ["mcp>=1.28"]                            # unifi-gateway-mcp server
+mcp = ["mcp>=1.28,<2"]                            # unifi-gateway-mcp server
 dev = [
   "pytest>=8",
   "pytest-asyncio>=0.23",

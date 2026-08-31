@@ -1,5 +1,5 @@
 {
   "name": "UniFi Gateway (non-invasive)",
-  "homeassistant": "2026.6.0",
+  "homeassistant": "2025.3.0",
   "render_readme": true
 }

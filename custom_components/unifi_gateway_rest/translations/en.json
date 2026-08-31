@@ -131,6 +131,7 @@
       "overheating": { "name": "Overheating" },
       "failover": { "name": "WAN failover active" },
       "update_available": { "name": "Firmware update available" },
+      "speedtest_in_progress": { "name": "Speedtest in progress" },
       "vpn_site_to_site": { "name": "Site-to-site VPN" },
       "wan_up": { "name": "Link" },
       "wan_active": { "name": "Active uplink" },

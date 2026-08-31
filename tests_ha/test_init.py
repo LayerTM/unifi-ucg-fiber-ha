@@ -75,6 +75,12 @@ async def test_binary_sensors(
     assert internet_id is not None
     assert hass.states.get(internet_id).state == "on"
 
+    speedtest_id = registry.async_get_entity_id(
+        "binary_sensor", "unifi_gateway_rest", f"{uid}_speedtest_in_progress"
+    )
+    assert speedtest_id is not None
+    assert hass.states.get(speedtest_id).state == "off"
+
     # SFP problem sub-device binary sensor exists for the present module (port 7)
     sfp_problem = registry.async_get_entity_id(
         "binary_sensor", "unifi_gateway_rest", f"{uid}_sfp7_problem"
@@ -92,6 +98,37 @@ async def test_no_control_buttons_without_opt_in(
     assert (
         registry.async_get_entity_id("button", "unifi_gateway_rest", f"{uid}_run_speedtest") is None
     )
+
+
+async def test_api_error_during_setup_retries(
+    hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: AsyncMock
+) -> None:
+    """A console still booting (or a 502/503 proxy) must be retried, not failed."""
+    from custom_components.unifi_gateway_rest.aiounifigw import GwApiError
+
+    mock_client.async_prepare = AsyncMock(side_effect=GwApiError("bad gateway", status=502))
+    config_entry.add_to_hass(hass)
+    with _patch(mock_client):
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+    assert config_entry.state is ConfigEntryState.SETUP_RETRY
+
+
+async def test_probe_api_error_retries(
+    hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: AsyncMock
+) -> None:
+    """`probe()` re-raises GwApiError (only capability denials are swallowed)."""
+    from custom_components.unifi_gateway_rest.aiounifigw import GwApiError
+
+    config_entry.add_to_hass(hass)
+    with patch.multiple(
+        "custom_components.unifi_gateway_rest",
+        GatewayClient=lambda *a, **k: mock_client,
+        probe=AsyncMock(side_effect=GwApiError("no gateway device found")),
+    ):
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+    assert config_entry.state is ConfigEntryState.SETUP_RETRY
 
 
 async def test_auth_failure_sets_reauth(

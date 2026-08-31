@@ -3,6 +3,44 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.4]
+
+Addresses the HACS review of
+[hacs/default#9244](https://github.com/hacs/default/pull/9244).
+
+### Fixed
+
+- **A transient API error during setup no longer breaks the entry permanently.**
+  `async_setup_entry` caught only `GwAuthError` and `GwConnectionError`; a
+  `GwApiError` — raised on any non-2xx status, and when `/stat/device` carries no
+  gateway — propagated and left the config entry in a failed state Home Assistant
+  never retries. A console that is still booting, or a reverse proxy answering
+  502/503, needed a manual reload. It now raises `ConfigEntryNotReady`, matching
+  what the coordinator already did at runtime.
+
+### Added
+
+- **Speedtest in progress** binary sensor (diagnostic). The `Speedtest.in_progress`
+  fact existed in the client model and was documented in the README, but no entity
+  ever read it.
+
+### Changed
+
+- **Minimum Home Assistant lowered from 2026.6.0 to 2025.3.0.** The floor was far
+  above what the code needs and hid the integration from everyone on an older
+  release. 2025.3.0 is the release that introduced `AddConfigEntryEntitiesCallback`,
+  the newest core API in use — measured against the Home Assistant sources, not
+  assumed.
+- **`quality_scale` removed from the manifest.** It is a Home Assistant core field,
+  is not evaluated for custom integrations, and read as an official rating.
+- **`mcp` extra pinned to `<2`.** The optional MCP server targets the v1 API;
+  mcp 2.x renamed `FastMCP` to `MCPServer`, which broke the unpinned install.
+  Migrating to the 2.x API is separate work.
+- `DeviceInfo(via_device=…)` on the WAN / SFP sub-devices carries a typing
+  suppression: the key left the TypedDict in 2026.8 in favour of `via_device_id`
+  (a device-registry id this code does not hold at construction time). It stays
+  functional until 2027.8 and is the only form that also works on the 2025.3 floor.
+
 ## [0.1.3]
 
 ### Added

@@ -26,6 +26,7 @@ from .aiounifigw import (
     ApiKeyAuth,
     GatewayActionClient,
     GatewayClient,
+    GwApiError,
     GwAuthError,
     GwConnectionError,
     SessionAuth,
@@ -88,7 +89,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: GatewayConfigEntry) -> b
         capabilities = await probe(client)
     except GwAuthError as err:
         raise ConfigEntryAuthFailed(str(err)) from err
-    except GwConnectionError as err:
+    except (GwConnectionError, GwApiError) as err:
+        # A console that is still booting, or a reverse proxy answering 502/503,
+        # is transient: retry rather than leaving the entry permanently failed.
         raise ConfigEntryNotReady(str(err)) from err
 
     scan_interval = int(entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
