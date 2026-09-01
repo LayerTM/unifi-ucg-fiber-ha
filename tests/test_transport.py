@@ -72,11 +72,54 @@ async def test_500_raises_api_error_with_status() -> None:
     assert exc.value.status == 500
 
 
-async def test_non_json_2xx_is_auth_error() -> None:
+async def test_non_json_2xx_is_api_error_not_auth() -> None:
+    """The console serving its SPA is unavailability, not a rejected credential.
+
+    Classifying it as auth makes HA raise ConfigEntryAuthFailed, which is terminal:
+    one such response during a firmware update permanently detaches the entry even
+    though the credential is still valid.
+    """
     s = FakeSession()
     s.add("GET", URL, status=200, body="<html>login</html>", content_type="text/html")
-    with pytest.raises(GwAuthError):
+    with pytest.raises(GwApiError):
         await _transport(s, ApiKeyAuth("k")).get_json("/x")
+
+
+async def test_non_json_2xx_reauths_once_when_supported() -> None:
+    """A session-based auth still gets its one re-login: the body may be a login shell."""
+    auth = StubAuth(reauth=True)
+    s = FakeSession()
+    s.add("GET", URL, status=200, body="<html>login</html>", content_type="text/html")
+    s.add("GET", URL, payload={"ok": True})
+    assert await _transport(s, auth).get_json("/x") == {"ok": True}
+    assert auth.reauth_calls == 1
+
+
+async def test_non_json_2xx_after_reauth_is_api_error() -> None:
+    auth = StubAuth(reauth=True)
+    s = FakeSession()
+    s.add("GET", URL, status=200, body="<html>login</html>", content_type="text/html")
+    s.add("GET", URL, status=200, body="<html>login</html>", content_type="text/html")
+    with pytest.raises(GwApiError):
+        await _transport(s, auth).get_json("/x")
+    assert auth.reauth_calls == 1
+
+
+async def test_redirects_are_not_followed() -> None:
+    """aiohttp follows redirects by default; a redirect to the SPA would then
+    arrive as a 200 text/html and be misread as an expired session."""
+    s = FakeSession()
+    s.add("GET", URL, payload={"ok": True})
+    await _transport(s, ApiKeyAuth("k")).get_json("/x")
+    assert s.requests[-1][2].get("allow_redirects") is False
+
+
+async def test_redirect_is_api_error_not_auth() -> None:
+    s = FakeSession()
+    s.add("GET", URL, status=302, headers={"Location": "https://gw.local/manage"})
+    with pytest.raises(GwApiError) as exc:
+        await _transport(s, ApiKeyAuth("k")).get_json("/x")
+    assert exc.value.status == 302
 
 
 async def test_connection_error_mapped() -> None:
@@ -110,8 +153,8 @@ async def test_send_empty_2xx_returns_none() -> None:
     assert await _transport(s, ApiKeyAuth("k")).send("POST", "/cmd") is None
 
 
-async def test_send_non_json_2xx_is_auth_error() -> None:
+async def test_send_non_json_2xx_is_api_error_not_auth() -> None:
     s = FakeSession()
     s.add("POST", "https://gw.local/cmd", status=200, body="<html>")
-    with pytest.raises(GwAuthError):
+    with pytest.raises(GwApiError):
         await _transport(s, ApiKeyAuth("k")).send("POST", "/cmd")

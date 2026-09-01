@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aiounifigw"
-version = "0.1.4"
+version = "0.1.5"
 description = "Async client for the Ubiquiti UniFi OS gateway (UCG-Fiber / UCG / UDM / UXG) local REST API — non-invasive monitoring with opt-in control."
 readme = "README.md"
 license = "MIT"

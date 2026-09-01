@@ -3,6 +3,30 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.5]
+
+### Fixed
+
+- **The integration no longer loses authorization on its own.** The transport
+  classified two non-authorization conditions as auth failures, and the coordinator
+  turns any auth failure into `ConfigEntryAuthFailed` — which Home Assistant treats
+  as terminal: polling stops and the entry waits for a manual re-authentication that
+  never becomes necessary, because the credential was valid the whole time.
+  - A **2xx carrying the console's web UI instead of JSON** was reported as
+    "session may have expired". It means the console is not serving the API — it is
+    booting, updating or restarting. It is now a retryable `GwApiError`. A
+    session-based login still gets its one re-login attempt first, since the body
+    may genuinely be a login shell.
+  - **Redirects are no longer followed.** `aiohttp` follows them by default, and the
+    UniFi OS proxy answers API paths with `302 → /manage` whenever the Network
+    application is down; following that turned it into a `200 text/html` that was
+    indistinguishable from an expired session. Redirects now surface as a
+    `GwApiError` naming the target, so the cause is visible in the log.
+
+  Measured on a live UCG-Fiber: the API key Home Assistant had marked as expired
+  answered `200 application/json` on `stat/device` and `stat/health`, while a
+  deliberately wrong key and no key both returned 401.
+
 ## [0.1.4]
 
 Addresses the HACS review of
