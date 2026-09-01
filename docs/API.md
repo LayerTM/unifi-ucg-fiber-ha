@@ -19,6 +19,25 @@ Network `10.5.62`. `{site}` is the internal site name (usually `default`).
 
 TLS is self-signed on UniFi OS; certificate verification is off by default.
 
+### Responses that are not the API
+
+While the Network application behind the UniFi OS proxy is down — booting, mid
+firmware update, restarting — the console still answers, but with its **web UI**
+rather than the API. Two shapes were observed on a live UCG-Fiber, both while
+carrying a *valid* API key:
+
+| Response | Meaning |
+|---|---|
+| `302` to `/manage` | the proxy is up, the application is not |
+| `200` with `text/html` | what the redirect resolves to, if it is followed |
+
+`aiohttp` follows redirects by default, which turns the first into the second and
+makes it indistinguishable from an expired session. The client therefore sets
+`allow_redirects=False` and classifies both as *unavailable* (retryable), never as
+an authentication failure. **A rejected credential is a `401`, and nothing else.**
+For reference, a healthy application returns JSON even for its errors —
+`api.err.NotFound` arrives as `404 application/json`.
+
 ## `GET /api/system` — console identity
 
 Short payload (with an API key). Used for the config-entry `unique_id`.
