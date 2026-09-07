@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+
+- **The optional MCP server targets mcp 2.x.** `FastMCP` was renamed to
+  `MCPServer` and moved from `mcp.server.fastmcp` to `mcp.server.mcpserver`; the
+  old import path now raises with a pointer to the migration guide. The `mcp`
+  extra therefore requires `>=2,<3` instead of `>=1.28,<2`, closing the work the
+  0.1.4 pin deferred. The Home Assistant integration is unaffected: the MCP
+  module is not part of the vendored client it ships.
+
 ## [0.1.7]
 
 ### Changed

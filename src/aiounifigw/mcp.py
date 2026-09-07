@@ -12,11 +12,11 @@ from __future__ import annotations
 from typing import Any
 
 import aiohttp
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from .summary import make_client, read_all, status_payload
 
-server = FastMCP("unifi-gateway")
+server = MCPServer("unifi-gateway")
 
 
 @server.tool()
