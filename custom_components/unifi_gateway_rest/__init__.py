@@ -19,6 +19,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceEntry
 
@@ -45,6 +46,7 @@ from .const import (
     PLATFORMS,
 )
 from .coordinator import GatewayDataUpdateCoordinator
+from .entity import hub_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -114,6 +116,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: GatewayConfigEntry) -> b
         )
 
     entry.runtime_data = GatewayRuntimeData(coordinator, action_client)
+    # Register the hub before the platforms load: a sub-device can only be linked
+    # to it by device-registry id, which does not exist until the hub does.
+    hub = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id, **hub_device_info(coordinator)
+    )
+    coordinator.hub_device_id = hub.id
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload))
     return True

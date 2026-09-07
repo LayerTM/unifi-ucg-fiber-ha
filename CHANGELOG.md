@@ -3,6 +3,25 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.7]
+
+### Changed
+
+- **Sub-devices are attached to the hub by device-registry id, not by identifiers.**
+  Home Assistant 2026.8 replaced `DeviceInfo(via_device=…)` with `via_device_id` and
+  removes the old key in **2027.8**; until then core logs a warning naming this
+  integration every time a device is created that way — 18 of them in one run of the
+  integration test-suite (core de-duplicates per call site, so a running Home
+  Assistant shows the line rather than the count). `async_setup_entry`
+  now registers the hub device before the platforms load, so a hub id exists to point
+  at, and every WAN / SFP sub-device carries it.
+
+  **No new minimum Home Assistant version.** Which spelling to send is asked of
+  `DeviceInfo` itself rather than of a version number, so the 2025.3 floor is
+  unchanged and nothing needs revisiting when the old key is finally removed. The
+  hub device definition also lives in one place now, shared by the hub entities and
+  by setup, instead of being written twice.
+
 ## [0.1.6]
 
 ### Fixed

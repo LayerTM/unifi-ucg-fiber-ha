@@ -45,6 +45,56 @@ def add_new_entities(
     return _sync
 
 
+def hub_device_info(coordinator: GatewayDataUpdateCoordinator) -> DeviceInfo:
+    """Describe the gateway/console hub device.
+
+    One definition, used both by the hub entities and by ``async_setup_entry``,
+    which registers this device before any platform loads so that every
+    sub-device has a hub id to point at.
+    """
+    entry = coordinator.config_entry
+    assert entry is not None
+    data = coordinator.data
+    sysinfo = data.sysinfo
+    host = entry.data[CONF_HOST]
+    port = entry.data.get(CONF_PORT, DEFAULT_PORT)
+    config_url = f"https://{host}" if port == DEFAULT_PORT else f"https://{host}:{port}"
+    connections: set[tuple[str, str]] = set()
+    if entry.unique_id:
+        connections = {(CONNECTION_NETWORK_MAC, format_mac(entry.unique_id))}
+    name = (sysinfo.name if sysinfo else "") or data.device.name or "UniFi Gateway"
+    sw_version = (sysinfo.console_version if sysinfo else "") or data.device.firmware_version
+    return DeviceInfo(
+        identifiers={(DOMAIN, entry.entry_id)},
+        connections=connections,
+        manufacturer=MANUFACTURER,
+        name=name,
+        model=data.device.model or None,
+        sw_version=sw_version or None,
+        configuration_url=config_url,
+    )
+
+
+# Home Assistant 2026.8 replaced `via_device` (the hub's identifiers) with
+# `via_device_id` (the hub's device-registry id) and removes the old spelling in
+# 2027.8, warning about it in the log until then. Both state the same fact, so
+# which one to send is asked of `DeviceInfo` itself rather than of a version
+# number: that keeps the 2025.3 floor this integration supports, with nothing to
+# revisit when the old key finally goes.
+_ACCEPTS_VIA_DEVICE_ID = "via_device_id" in DeviceInfo.__optional_keys__
+
+
+def link_to_hub(info: DeviceInfo, coordinator: GatewayDataUpdateCoordinator) -> DeviceInfo:
+    """Attach a sub-device to the hub device of its config entry."""
+    entry = coordinator.config_entry
+    assert entry is not None
+    if _ACCEPTS_VIA_DEVICE_ID and (hub_id := coordinator.hub_device_id) is not None:
+        info["via_device_id"] = hub_id
+    else:
+        info["via_device"] = (DOMAIN, entry.entry_id)  # type: ignore[typeddict-unknown-key]
+    return info
+
+
 class GatewayEntity(CoordinatorEntity[GatewayDataUpdateCoordinator]):
     """Base entity attached to the gateway/console hub device."""
 
@@ -55,25 +105,7 @@ class GatewayEntity(CoordinatorEntity[GatewayDataUpdateCoordinator]):
         entry = coordinator.config_entry
         assert entry is not None
         self._attr_unique_id = f"{entry.unique_id}_{key}"
-        data = coordinator.data
-        sysinfo = data.sysinfo
-        host = entry.data[CONF_HOST]
-        port = entry.data.get(CONF_PORT, DEFAULT_PORT)
-        config_url = f"https://{host}" if port == DEFAULT_PORT else f"https://{host}:{port}"
-        connections: set[tuple[str, str]] = set()
-        if entry.unique_id:
-            connections = {(CONNECTION_NETWORK_MAC, format_mac(entry.unique_id))}
-        name = (sysinfo.name if sysinfo else "") or data.device.name or "UniFi Gateway"
-        sw_version = (sysinfo.console_version if sysinfo else "") or data.device.firmware_version
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, entry.entry_id)},
-            connections=connections,
-            manufacturer=MANUFACTURER,
-            name=name,
-            model=data.device.model or None,
-            sw_version=sw_version or None,
-            configuration_url=config_url,
-        )
+        self._attr_device_info = hub_device_info(coordinator)
 
 
 class GatewayWanEntity(CoordinatorEntity[GatewayDataUpdateCoordinator]):
@@ -87,16 +119,14 @@ class GatewayWanEntity(CoordinatorEntity[GatewayDataUpdateCoordinator]):
         entry = coordinator.config_entry
         assert entry is not None
         self._attr_unique_id = f"{entry.unique_id}_{wan_id.lower()}_{key}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"{entry.entry_id}_{wan_id.lower()}")},
-            # `via_device` left the DeviceInfo TypedDict in 2026.8 in favour of
-            # `via_device_id`, which needs a device-registry id we do not have here.
-            # It stays functional until its removal in 2027.8, and it is the only
-            # form that also works on the 2025.3 floor this integration supports.
-            via_device=(DOMAIN, entry.entry_id),  # type: ignore[typeddict-unknown-key]
-            manufacturer=MANUFACTURER,
-            model="WAN uplink",
-            name=wan_id,
+        self._attr_device_info = link_to_hub(
+            DeviceInfo(
+                identifiers={(DOMAIN, f"{entry.entry_id}_{wan_id.lower()}")},
+                manufacturer=MANUFACTURER,
+                model="WAN uplink",
+                name=wan_id,
+            ),
+            coordinator,
         )
 
     @property
@@ -122,16 +152,14 @@ class GatewaySfpEntity(CoordinatorEntity[GatewayDataUpdateCoordinator]):
         self._attr_unique_id = f"{entry.unique_id}_sfp{port_idx}_{key}"
         port = self.port
         has_module = bool(port and port.present)
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, f"{entry.entry_id}_sfp{port_idx}")},
-            # `via_device` left the DeviceInfo TypedDict in 2026.8 in favour of
-            # `via_device_id`, which needs a device-registry id we do not have here.
-            # It stays functional until its removal in 2027.8, and it is the only
-            # form that also works on the 2025.3 floor this integration supports.
-            via_device=(DOMAIN, entry.entry_id),  # type: ignore[typeddict-unknown-key]
-            manufacturer=port.vendor if has_module and port and port.vendor else MANUFACTURER,
-            model=(port.part if has_module and port and port.part else "SFP+ port"),
-            name=f"SFP Port {port_idx}",
+        self._attr_device_info = link_to_hub(
+            DeviceInfo(
+                identifiers={(DOMAIN, f"{entry.entry_id}_sfp{port_idx}")},
+                manufacturer=port.vendor if has_module and port and port.vendor else MANUFACTURER,
+                model=(port.part if has_module and port and port.part else "SFP+ port"),
+                name=f"SFP Port {port_idx}",
+            ),
+            coordinator,
         )
 
     @property

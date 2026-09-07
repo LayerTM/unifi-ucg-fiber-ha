@@ -58,6 +58,9 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
         )
         self.client = client
         self.capabilities = capabilities
+        self.hub_device_id: str | None = None
+        """Device-registry id of the hub, set by `async_setup_entry` before the
+        platforms load. Sub-devices point at it (see `entity.link_to_hub`)."""
 
     async def _optional[T](self, call: Callable[[], Awaitable[T]]) -> T | None:
         """Run a supplementary fetch, degrading to None on a scope/API error.
