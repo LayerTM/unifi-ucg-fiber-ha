@@ -22,7 +22,7 @@ dependencies = ["aiohttp>=3.9", "yarl>=1.9"]
 
 [project.optional-dependencies]
 cli = ["typer>=0.12", "rich>=13"]              # unifi-gateway CLI
-mcp = ["mcp>=1.28,<2"]                            # unifi-gateway-mcp server
+mcp = ["mcp>=1.28,<3"]                            # unifi-gateway-mcp server
 dev = [
   "pytest>=8",
   "pytest-asyncio>=0.23",
