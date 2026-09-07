@@ -71,8 +71,6 @@ SKIP_DIRS = {
     ".pytest_cache",
     "captures",
     ".secrets",
-    ".maestri",
-    ".team-comm",
 }
 SKIP_SUFFIX = {
     ".png",
