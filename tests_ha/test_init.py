@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
-import pytest
 from custom_components.unifi_gateway_rest.aiounifigw import Capabilities
 from custom_components.unifi_gateway_rest.const import DOMAIN
 from homeassistant.config_entries import ConfigEntryState
@@ -147,17 +146,16 @@ async def test_auth_failure_sets_reauth(
     assert config_entry.state is ConfigEntryState.SETUP_ERROR
 
 
-async def test_subdevices_link_to_hub_without_deprecated_api(
+async def test_subdevices_link_to_hub_by_registry_id(
     hass: HomeAssistant,
     config_entry: MockConfigEntry,
     mock_client: AsyncMock,
-    caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """Every WAN / SFP sub-device hangs off the hub, using no deprecated API.
+    """Every WAN / SFP sub-device hangs off the hub by device-registry id.
 
-    `via_device` (an identifiers tuple) is deprecated in favour of `via_device_id`
-    (a device-registry id) and is removed in Home Assistant 2027.8; core logs a
-    warning naming the integration whenever it is passed.
+    That the link is made without a deprecated API is no longer asserted here:
+    the autouse guard in `conftest` fails any test in which core reports one,
+    whichever API and wherever it is called from.
     """
     await _setup(hass, config_entry, mock_client)
     registry = dr.async_get(hass)
@@ -166,4 +164,3 @@ async def test_subdevices_link_to_hub_without_deprecated_api(
     children = [device for device in devices if device.id != hub.id]
     assert children, "expected WAN / SFP sub-devices"
     assert all(device.via_device_id == hub.id for device in children)
-    assert "deprecated `via_device`" not in caplog.text
