@@ -1,0 +1,36 @@
+# Dependabot configuration.
+#
+# Groups intentionally omit `update-types`: with patterns:["*"], adding an
+# update-types filter silently suppresses major-version PRs upstream
+# (dependabot/dependabot-core#14202). Majors therefore group in with
+# minor/patch and are reviewed like any other pull request.
+#
+# `hacs/action@main` and `home-assistant/actions/hassfest@master` track a
+# branch, which Dependabot cannot version — both are pinned that way because
+# their upstreams document no other reference. They stay outside these updates.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"
+    labels: ["dependencies"]
+    groups:
+      github-actions:
+        patterns: ["*"]
+
+  # `pyproject.toml` is PEP 621, which the pip ecosystem parses. Runtime and
+  # extra requirements are lower bounds, so expect updates here only when a
+  # release falls outside a declared range.
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps"
+    labels: ["dependencies"]
+    groups:
+      python-dependencies:
+        patterns: ["*"]
