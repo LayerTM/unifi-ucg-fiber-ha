@@ -78,6 +78,8 @@ files = ["src/aiounifigw"]
 asyncio_mode = "auto"
 addopts = "-q --strict-markers"
 testpaths = ["tests"]
+# Python's own deprecation channel, which no log watcher can see.
+filterwarnings = ["error::DeprecationWarning"]
 
 [tool.coverage.run]
 branch = true
