@@ -5,13 +5,24 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+
+- **The version is read from the integration manifest.** It had been stated in
+  three files that drifted apart — `0.1.7` in the manifest, `0.1.6` in the package
+  metadata, `0.1.3` in the library — against a released `v0.1.7`. The manifest is
+  what Home Assistant and HACS show and what a release tag is cut from, so the
+  package version is derived from it and a release changes one line. The library's
+  `__version__` is deleted rather than corrected: nothing read it, no documentation
+  mentioned it, and the package is not published — a copy that could only drift.
+
 ### Changed
 
 - **The optional MCP server targets mcp 2.x.** `FastMCP` was renamed to
   `MCPServer` and moved from `mcp.server.fastmcp` to `mcp.server.mcpserver`; the
   old import path now raises with a pointer to the migration guide. The `mcp`
-  extra therefore requires `>=2,<3` instead of `>=1.28,<2`, closing the work the
-  0.1.4 pin deferred. The Home Assistant integration is unaffected: the MCP
+  extra therefore requires `>=2`, replacing the `>=1.28,<2` pin and closing the
+  work it deferred. No upper bound: a ceiling turns an incompatible major into
+  silence, where an unpinned install turns it into a red build naming the break. The Home Assistant integration is unaffected: the MCP
   module is not part of the vendored client it ships.
 
 ## [0.1.7]

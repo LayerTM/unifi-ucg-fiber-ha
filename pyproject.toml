@@ -22,7 +22,7 @@ dependencies = ["aiohttp>=3.9", "yarl>=1.9"]
 
 [project.optional-dependencies]
 cli = ["typer>=0.12", "rich>=13"]              # unifi-gateway CLI
-mcp = ["mcp>=2,<3"]                               # unifi-gateway-mcp server
+mcp = ["mcp>=2"]                                  # unifi-gateway-mcp server
 dev = [
   "pytest>=8",
   "pytest-asyncio>=0.23",
@@ -48,9 +48,12 @@ Documentation = "https://github.com/LayerTM/unifi-ucg-fiber-ha/blob/main/docs/AP
 unifi-gateway = "aiounifigw.cli:main"
 unifi-gateway-mcp = "aiounifigw.mcp:main"
 
-# The version is stated once, in the package itself, and read from there.
+# The version is stated once, in the integration manifest — the file Home
+# Assistant and HACS read, and the one a release tag is cut from. Repeating
+# it in the package is what let three files disagree (0.1.7 / 0.1.6 / 0.1.3).
 [tool.hatch.version]
-path = "src/aiounifigw/__init__.py"
+path = "custom_components/unifi_gateway_rest/manifest.json"
+pattern = '"version":\s*"(?P<version>[^"]+)"'
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/aiounifigw"]

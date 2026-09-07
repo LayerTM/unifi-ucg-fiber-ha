@@ -54,4 +54,3 @@ __all__ = [
     "Wan",
     "probe",
 ]
-__version__ = "0.1.7"
