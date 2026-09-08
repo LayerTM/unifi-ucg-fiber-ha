@@ -6,19 +6,92 @@ on:
 
 jobs:
   integration:
+    # Two cells: the oldest Home Assistant this integration claims to support, and
+    # the newest one released. Supporting a floor nothing runs against is a claim,
+    # not a fact — and testing only the floor proves nothing about the version
+    # users actually get.
+    name: integration (${{ matrix.ha }} HA)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 2025.3 needs Python 3.13; the harness that pins it declares `>=3.13`.
+          - ha: minimum
+            python-version: "3.13"
+          - ha: latest
+            python-version: "3.14"
+
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.14"
-      - name: Install library + Home Assistant test stack
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install library + newest Home Assistant test stack
+        if: matrix.ha == 'latest'
         run: pip install -e ".[dev,ha]"
+
+      - name: Install library + oldest supported Home Assistant
+        if: matrix.ha == 'minimum'
+        # The floor is read from `hacs.json`, which is where it is declared to HACS
+        # and to users — so the version this job proves and the version advertised
+        # cannot drift apart.
+        #
+        # Which test harness goes with that Home Assistant is not written down here
+        # either. Every pytest-homeassistant-custom-component release pins one exact
+        # `homeassistant==` in its own metadata, so naming the Home Assistant version
+        # and letting the resolver work backwards picks the matching harness on its
+        # own. A table would be a second place to be wrong; this asks the packages.
+        # It costs the resolver a couple of minutes of backtracking.
+        #
+        # The `ha` extra is not used here: it carries a `python_full_version >=
+        # '3.14.2'` marker, so on this cell it would resolve to nothing at all.
+        run: |
+          MIN=$(python -c 'import json; print(json.load(open("hacs.json"))["homeassistant"])')
+          echo "Floor declared in hacs.json: $MIN"
+          pip install -e ".[dev]"
+          pip install "pytest-homeassistant-custom-component" "homeassistant==$MIN"
+          python - "$MIN" <<'EOF'
+          import sys
+          from homeassistant.const import __version__ as running
+          wanted = sys.argv[1]
+          assert running == wanted, f"resolver landed on {running}, not {wanted}"
+          print("running against Home Assistant", running)
+          EOF
+
       - name: Vendored aiounifigw is in sync with src/
+        if: matrix.ha == 'latest'
         run: |
           python scripts/vendor_aiounifigw.py
           git diff --exit-code custom_components/unifi_gateway_rest/aiounifigw
+
       - name: Type check integration (Python 3.14, strict)
+        if: matrix.ha == 'latest'
+        # Only against the newest core. The hub link is written with whichever
+        # `DeviceInfo` key the installed Home Assistant accepts, so exactly one of
+        # the two spellings type-checks at a time: on the floor `via_device_id` is
+        # an unknown key and the `via_device` ignore is unused, and on the newest
+        # core it is the other way round. Runtime behaviour is covered on both
+        # cells by the tests below.
         run: mypy --strict --python-version 3.14 custom_components/unifi_gateway_rest
+
+      - name: Integration tests + coverage
+        if: matrix.ha == 'latest'
+        # 96 is the level measured on this code, rounded down — not a target. The
+        # vendored client is omitted in `pyproject.toml`: it is measured by the
+        # library suite, and counting it here would put most of the misses in a
+        # copy this suite mocks.
+        run: >-
+          PYTHONPATH=. pytest tests_ha/
+          --cov=custom_components.unifi_gateway_rest
+          --cov-report=term-missing
+          --cov-fail-under=96
+
       - name: Integration tests
-        run: PYTHONPATH=. pytest tests_ha/
+        if: matrix.ha == 'minimum'
+        # The deprecation guard is a claim about the newest core and is checked
+        # there. Its anti-rot test asserts the sentences core builds a deprecation
+        # notice from, and this Home Assistant does not build one of them yet — so
+        # on this cell it would report a guard going blind where nothing is wrong.
+        run: PYTHONPATH=. pytest tests_ha/ --ignore=tests_ha/test_deprecation_guard.py
