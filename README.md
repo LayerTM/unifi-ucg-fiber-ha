@@ -63,9 +63,12 @@ identity. Everything is served from one shared coordinator fetch. See
 Two authentication methods are supported; pick one during setup:
 
 - **API key** (recommended) — created in the UniFi OS UI. On the UCG-Fiber it
-  reaches the full classic telemetry and is read-only, so nothing can be changed.
-- **Local account** (username + password) — the same reads, and the auth required
-  for opt-in control actions.
+  reaches the full classic telemetry.
+- **Local account** (username + password) — the same reads, and the fallback when
+  a key is limited to the Integration API.
+
+Either way the integration only reads, until you turn the opt-in controls on —
+see [Controls](#controls-opt-in) for what that changes and what it needs.
 
 ## Entities
 
@@ -106,7 +109,7 @@ Via HACS (custom repository):
    complete the flow:
    - **Host / Port / Site** of the gateway console, and whether to verify TLS
      (off by default — UniFi OS ships a self-signed certificate).
-   - **Authentication** — an API key (recommended, read-only) or a local account.
+   - **Authentication** — an API key (recommended) or a local account.
 
 Use a least-privilege credential — an API key, or a dedicated limited local
 admin — rather than your owner account. The `aiounifigw` client is bundled inside
@@ -125,8 +128,9 @@ Nothing is written to or left on the gateway, so no device-side cleanup is neede
 
 ## Security & privacy
 
-- Read-only by default; control actions are opt-in, off by default, and need
-  write-capable auth (a local account, or an API key created with write scope).
+- Read-only by default: the polling client issues nothing but GET requests, and
+  the control actions are opt-in and off until you switch them on — see
+  [Controls](#controls-opt-in).
 - Credentials live only in the Home Assistant config entry; nothing is sent to
   third parties.
 - Diagnostics redact credentials, MAC and WAN IP, and a secret/PII scanner
@@ -135,10 +139,24 @@ Nothing is written to or left on the gateway, so no device-side cleanup is neede
 ## Controls (opt-in)
 
 Off by default. Enable **Configure → Enable control actions** to add a **Run
-speedtest** button and a **Restart** button. Controls require write-capable auth
-(a local account, or an API key created with write scope); a refused action
-reports a clear permissions error. The official `unifi` integration remains the
-place for firmware installs and network management.
+speedtest** button and a **Restart** button.
+
+**Where the read-only boundary actually is.** It is a property of this
+integration, not of your credential. The polling client only ever issues GET
+requests, and no control exists until you switch it on. A UniFi API key is *not*
+read-only by nature: UniFi's own local Network API authenticates state-changing
+requests with the same `X-API-Key` header it uses for reads.
+
+So once controls are on, a button sends its command with whichever credential you
+configured, and it succeeds only if the console permits that credential to write.
+If it does not, the action fails with a clear permissions error and nothing on the
+gateway changes. Which credentials the console accepts on the classic command
+endpoint is decided by the console and is not documented by UniFi, so this is
+worth confirming on your own gateway rather than assuming: a local account with
+write permission is the combination this integration was built around.
+
+The official `unifi` integration remains the place for firmware installs and
+network management.
 
 ## Supported devices
 
@@ -190,8 +208,9 @@ page. Re-authentication is requested only for a 401 that survives that re-login.
   during a firmware update) as an expired session, and Home Assistant treats that as
   final: polling stops until you click through re-authentication. Update, then reload
   the entry — reloading also clears the stale *"Authentication expired"* repair.
-- **Controls don't appear after enabling them** — controls need write-capable
-  auth; a read-only API key can't perform writes.
+- **A control action is refused** — the console does not permit that credential
+  to write; the action reports a permissions error and changes nothing. See
+  [Controls](#controls-opt-in).
 - **A removed WAN/SFP lingers as a device** — it goes *unavailable*; delete it
   from the device page (removing stale sub-devices is allowed).
 - **Diagnostics** — download redacted diagnostics from the device page when

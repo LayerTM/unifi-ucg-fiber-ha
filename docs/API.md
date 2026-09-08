@@ -14,8 +14,8 @@ Network `10.5.62`. `{site}` is the internal site name (usually `default`).
 
 | Method | How |
 |---|---|
-| API key | `X-API-Key: <key>` on every request. Created in the UniFi OS UI (Settings → Control Plane → Integrations → Create API Key). Recommended for read-only use. |
-| Local account | `POST /api/auth/login` `{username, password}` → captures `TOKEN` cookie + `X-CSRF-Token`. Required for writes. |
+| API key | `X-API-Key: <key>` on every request. Created in the UniFi OS UI (Settings → Control Plane → Integrations → Create API Key). Recommended; the read paths need nothing more. |
+| Local account | `POST /api/auth/login` `{username, password}` → captures `TOKEN` cookie + `X-CSRF-Token`. The fallback when a key is limited to the Integration API, and the credential the control actions were built around. |
 
 TLS is self-signed on UniFi OS; certificate verification is off by default.
 
@@ -91,7 +91,9 @@ Returns `{ "data": [ <subsystem>, … ] }`, one row per `subsystem`.
 
 ## `POST /proxy/network/api/s/{site}/cmd/devmgr` — control actions (write)
 
-Opt-in only; requires write-capable auth.
+Opt-in only. Whether a given credential may run these commands is decided by the
+console — an API key is not read-only by nature — and a refusal comes back as
+401/403. See the README's *Controls* section for the boundary as a whole.
 
 | Action | Body |
 |---|---|
