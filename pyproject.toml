@@ -90,3 +90,9 @@ source = ["src/aiounifigw", "custom_components/unifi_gateway_rest"]
 # The vendored client is a copy of src/aiounifigw and is covered by the library
 # suite (tests/); exclude it from the integration-suite measurement.
 omit = ["*/custom_components/unifi_gateway_rest/aiounifigw/*"]
+
+[tool.coverage.report]
+# Compare `--cov-fail-under` against the real total, not the rounded one. At the
+# default precision coverage rounds first, so a 95.6% project displays — and
+# compares — as 96, and a threshold of 96 passes on code that never reached it.
+precision = 2

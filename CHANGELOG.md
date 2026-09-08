@@ -5,6 +5,19 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Changed
+
+- **The oldest supported Home Assistant is tested, not just claimed.** The
+  integration suite now runs against two cores: the floor declared in `hacs.json`
+  and the newest release. The floor is read from that file in CI, so the version
+  advertised and the version proved cannot drift apart, and the matching test
+  harness is resolved from its own metadata rather than from a list kept by hand.
+
+- **Integration coverage is a build gate**, set to the level measured on this code
+  rather than a target, and compared against the real figure — coverage rounds
+  before comparing by default, which lets a threshold pass on a project that has
+  not reached it.
+
 ### Fixed
 
 - **The version is read from the integration manifest.** It had been stated in
