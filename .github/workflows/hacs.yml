@@ -11,6 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # hacs/action is a Docker action, so the runner pulls ghcr.io/hacs/action
+      # while it sets the job up, before the first step. No step in this job can
+      # fetch that image ahead of the runner, the way hassfest.yml does.
       - uses: hacs/action@main
         with:
           category: integration

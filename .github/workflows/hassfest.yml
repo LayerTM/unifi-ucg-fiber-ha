@@ -11,4 +11,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
+      # The hassfest action is a composite action that invokes
+      # ghcr.io/home-assistant/hassfest with `docker run`, which contacts the
+      # registry only when the image is not already present. Fetching it here,
+      # with retries, keeps a transient registry error (`toomanyrequests`) from
+      # being reported as a hassfest failure. A sustained registry outage still
+      # fails the run, on the step below, with the registry's own message.
+      - name: Fetch the hassfest image
+        continue-on-error: true
+        run: |
+          for attempt in 1 2 3; do
+            if docker pull ghcr.io/home-assistant/hassfest; then
+              exit 0
+            fi
+            [ "$attempt" = 3 ] || sleep 30
+          done
+          exit 1
+
       - uses: home-assistant/actions/hassfest@master
