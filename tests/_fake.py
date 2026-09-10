@@ -86,3 +86,11 @@ class FakeSession:
 
     def last_json(self) -> Any:
         return self.requests[-1][2].get("json")
+
+
+class TlsServer:
+    """Where a running self-signed TLS server is listening, and what it serves."""
+
+    def __init__(self, port: int, fingerprint: str) -> None:
+        self.port = port
+        self.fingerprint = fingerprint

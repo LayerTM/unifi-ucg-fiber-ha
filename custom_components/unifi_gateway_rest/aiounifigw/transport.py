@@ -22,13 +22,14 @@ from typing import Any
 import aiohttp
 
 from .auth import AbstractAuth
-from .const import DEFAULT_PORT, DEFAULT_TIMEOUT, DEFAULT_VERIFY_SSL
+from .const import DEFAULT_PORT, DEFAULT_TIMEOUT
 from .exceptions import (
     GwApiError,
     GwAuthError,
     GwCapabilityError,
     GwConnectionError,
 )
+from .tls import mismatch_from
 
 
 class _NonJsonBody:
@@ -51,13 +52,13 @@ class GatewayTransport:
         *,
         port: int = DEFAULT_PORT,
         use_ssl: bool = True,
-        verify_ssl: bool = DEFAULT_VERIFY_SSL,
+        ssl: bool | aiohttp.Fingerprint = True,
         timeout: int = DEFAULT_TIMEOUT,
     ) -> None:
         self._session = session
         self._auth = auth
         self._timeout = timeout
-        self._ssl = verify_ssl
+        self._ssl = ssl
         scheme = "https" if use_ssl else "http"
         default_port = 443 if use_ssl else 80
         netloc = host if port == default_port else f"{host}:{port}"
@@ -191,5 +192,10 @@ class GatewayTransport:
                         return status, _NON_JSON
                 await resp.read()
                 return status, None
+        except aiohttp.ServerFingerprintMismatch as err:
+            # Must precede ClientError: this IS one, and collapsing it into a
+            # generic connection failure hides the one condition a user has to
+            # act on.
+            raise mismatch_from(err) from err
         except (aiohttp.ClientError, TimeoutError) as err:
             raise GwConnectionError(str(err)) from err

@@ -131,10 +131,45 @@ Nothing is written to or left on the gateway, so no device-side cleanup is neede
 - Read-only by default: the polling client issues nothing but GET requests, and
   the control actions are opt-in and off until you switch them on — see
   [Controls](#controls-opt-in).
+- **The gateway's certificate is trusted on first use, not ignored.** A UniFi OS
+  console serves a self-signed certificate, so ordinary CA verification cannot
+  succeed against one. Setup reads the certificate, shows you its SHA-256
+  fingerprint to compare against the console's own screen, and from then on
+  accepts only that certificate — see [Certificate trust](#certificate-trust).
 - Credentials live only in the Home Assistant config entry; nothing is sent to
   third parties.
 - Diagnostics redact credentials, MAC and WAN IP, and a secret/PII scanner
   (`scripts/secret_scan.py`) runs in pre-commit and CI.
+
+## Certificate trust
+
+Setup offers three choices, and **pinning is the default**:
+
+| Choice | What it means |
+| --- | --- |
+| Pin this gateway's certificate | The certificate served at setup is recorded by SHA-256 and every later connection must present that exact certificate. |
+| Verify against the system CA store | Ordinary verification. Only works if you gave the console a certificate signed by a real authority. |
+| Accept any certificate | No assurance the host answering is your gateway. |
+
+**What pinning is, and what it is not.** Trust on first use assumes the first
+contact was not already intercepted — it is **not** equivalent to a certificate
+signed by a public authority. That assumption is exactly why the fingerprint is
+put on screen instead of being adopted silently: compare it with the value the
+console itself shows before you continue. Once pinned, a substituted certificate
+is refused *before the request is written*, so credentials never reach an
+impostor.
+
+**If the certificate changes.** Reissuing a certificate and impersonating a
+gateway look identical from here, so nothing is decided for you: a repair
+notification appears showing both the pinned fingerprint and the new one, and
+accepting the new one is an explicit act. Home Assistant never asks you to
+re-enter credentials for this — a swapped certificate is not a bad password.
+
+**Upgrading an existing setup.** An entry created before this existed keeps
+working exactly as before, unchanged: pinning whatever the gateway happened to
+serve during an upgrade would record a certificate nobody looked at. Instead a
+repair notification offers the one-time step, with the fingerprint shown. You can
+dismiss it and carry on unverified.
 
 ## Controls (opt-in)
 
@@ -274,6 +309,8 @@ scripts, agents and LLMs. Credentials come from the environment (`UNIFI_GW_HOST`
 ```bash
 pip install "aiounifigw[cli]"                      # CLI
 export UNIFI_GW_HOST=192.0.2.1 UNIFI_GW_APIKEY=... # or UNIFI_GW_USER / UNIFI_GW_PASS
+unifi-gateway fingerprint                          # print the certificate's SHA-256
+export UNIFI_GW_CERT_FINGERPRINT=$(unifi-gateway fingerprint)   # then pin it
 unifi-gateway status                               # gateway / WAN / internet summary
 unifi-gateway status --json                        # machine-readable
 unifi-gateway speedtest --yes                      # write — trigger an ISP speedtest
@@ -284,6 +321,14 @@ unifi-gateway-mcp                                  # exposes a gateway_status to
 
 **Safety model:** reads are always open; the only write (`speedtest`) prompts for
 confirmation (or `--yes`), and the MCP server registers **no** write tools.
+
+**TLS for these tools is unverified unless you say otherwise** — the historical
+behaviour against local hardware, stated here rather than left to be discovered.
+`UNIFI_GW_CERT_FINGERPRINT` pins that one certificate (run `unifi-gateway
+fingerprint` against a gateway you trust, then compare it with the console's own
+screen); `UNIFI_GW_VERIFY_SSL=1` verifies against the system CA store; a pinned
+fingerprint wins over both. Home Assistant does not use this path — it stores a
+pinned fingerprint per config entry. `UNIFI_GW_PORT` overrides the default 443.
 
 ## License
 

@@ -15,6 +15,7 @@ from __future__ import annotations
 import re
 import subprocess
 import sys
+from collections.abc import Iterator
 from pathlib import Path
 
 # Snippets that mark a value as an intentional placeholder (allowed).
@@ -113,7 +114,7 @@ def _is_binary(path: Path) -> bool:
         return True
 
 
-def iter_files(root: Path):
+def iter_files(root: Path) -> Iterator[Path]:
     # Scan exactly what git would commit (respects .gitignore, so venvs/caches
     # are excluded); fall back to a filtered filesystem walk outside a git repo.
     tracked = _git_tracked(root)

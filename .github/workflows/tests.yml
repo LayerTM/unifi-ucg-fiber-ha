@@ -19,6 +19,8 @@ jobs:
       - name: Install
         run: pip install -e ".[dev,cli,mcp]"
       - name: Type check (strict)
-        run: mypy --strict src/aiounifigw
+        # No path argument: an explicit one OVERRIDES `files =` in pyproject.toml,
+        # so the config could widen its scope while CI kept checking the old set.
+        run: mypy --strict
       - name: Tests + coverage gate
         run: pytest --cov=aiounifigw --cov-report=term-missing --cov-fail-under=90

@@ -29,6 +29,11 @@ dev = [
   "pytest-cov>=5",
   "mypy>=1.11",
   "ruff>=0.6",
+  # Declared, not inherited: the TLS tests issue a real handshake against a
+  # self-signed certificate they generate, so the pinning is exercised rather
+  # than mocked. cryptography arrives transitively today; a transitive
+  # dependency is not a contract.
+  "cryptography>=43",
 ]
 # Home Assistant integration dev/test. The harness pins a Home Assistant that
 # requires Python 3.14.2, while the library itself supports 3.12+ — so the
@@ -75,7 +80,9 @@ strict = true
 warn_unused_ignores = true
 warn_redundant_casts = true
 disallow_any_generics = true
-files = ["src/aiounifigw"]
+# scripts/ is included because those tools are not throwaway: they import the
+# library, and a public-API change can break one with no gate noticing.
+files = ["src/aiounifigw", "scripts"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

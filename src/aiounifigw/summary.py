@@ -14,8 +14,9 @@ import aiohttp
 from .actions import GatewayActionClient
 from .auth import AbstractAuth, ApiKeyAuth, SessionAuth
 from .client import GatewayClient
-from .const import DEFAULT_SITE
+from .const import DEFAULT_PORT, DEFAULT_SITE
 from .models import Device, Health, SysInfo
+from .tls import TlsMode, ssl_param
 
 
 def env_host() -> str:
@@ -39,19 +40,51 @@ def env_site() -> str:
     return os.environ.get("UNIFI_GW_SITE", DEFAULT_SITE)
 
 
-def env_verify_ssl() -> bool:
-    return os.environ.get("UNIFI_GW_VERIFY_SSL", "").lower() in ("1", "true", "yes", "on")
+def env_port() -> int:
+    raw = os.environ.get("UNIFI_GW_PORT")
+    return int(raw) if raw else DEFAULT_PORT
+
+
+def ssl_from_env() -> bool | aiohttp.Fingerprint:
+    """TLS trust for the command-line tools, read from the environment.
+
+    ``UNIFI_GW_CERT_FINGERPRINT`` pins that SHA-256; ``UNIFI_GW_VERIFY_SSL=1``
+    verifies against the CA store; with neither set the connection is
+    **unverified**, which is the historical behaviour of these developer tools
+    against local hardware and is why it is documented rather than assumed. Home
+    Assistant does not take this path — it stores a pinned fingerprint per entry.
+
+    Lives here rather than in ``tls.py`` because ``tls.py`` is vendored into the
+    Home Assistant integration, which must never read process environment; this
+    module is the command-line layer and is excluded from that copy.
+    """
+    fingerprint = os.environ.get("UNIFI_GW_CERT_FINGERPRINT")
+    if fingerprint:
+        return ssl_param(TlsMode.FINGERPRINT, fingerprint)
+    if os.environ.get("UNIFI_GW_VERIFY_SSL", "").lower() in ("1", "true", "yes", "on"):
+        return ssl_param(TlsMode.CA)
+    return ssl_param(TlsMode.INSECURE)
 
 
 def make_client(session: aiohttp.ClientSession) -> GatewayClient:
     return GatewayClient(
-        session, env_host(), env_auth(), site=env_site(), verify_ssl=env_verify_ssl()
+        session,
+        env_host(),
+        env_auth(),
+        site=env_site(),
+        port=env_port(),
+        ssl=ssl_from_env(),
     )
 
 
 def make_action_client(session: aiohttp.ClientSession) -> GatewayActionClient:
     return GatewayActionClient(
-        session, env_host(), env_auth(), site=env_site(), verify_ssl=env_verify_ssl()
+        session,
+        env_host(),
+        env_auth(),
+        site=env_site(),
+        port=env_port(),
+        ssl=ssl_from_env(),
     )
 
 

@@ -13,10 +13,9 @@ from typing import Final
 
 DEFAULT_PORT: Final = 443
 DEFAULT_TIMEOUT: Final = 15
-# UniFi OS consoles ship a self-signed certificate, so certificate verification
-# is OFF by default for local access. Callers on a trusted LAN can override with
-# verify_ssl=True (and a pinned CA) — surfaced as an option in the HA config flow.
-DEFAULT_VERIFY_SSL: Final = False
+# TLS trust lives in .tls: a gateway's self-signed certificate is pinned by
+# SHA-256 on first use rather than waved through. There is deliberately no
+# "verification off" default here any more — see TlsMode.
 DEFAULT_SITE: Final = "default"
 
 # UniFi OS core

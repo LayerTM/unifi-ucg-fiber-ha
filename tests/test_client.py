@@ -14,7 +14,7 @@ BASE = "https://gw.local"
 
 
 def _client(session: FakeSession, site: str = "default") -> GatewayClient:
-    return GatewayClient(session, "gw.local", ApiKeyAuth("k"), site=site, verify_ssl=False)  # type: ignore[arg-type]
+    return GatewayClient(session, "gw.local", ApiKeyAuth("k"), site=site, ssl=False)  # type: ignore[arg-type]
 
 
 async def test_get_device(stat_device: dict[str, Any]) -> None:
