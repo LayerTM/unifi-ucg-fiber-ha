@@ -360,10 +360,14 @@ class Speedtest:
     ping_ms: int | None
     latency_ms: int | None
     last_run: datetime | None
+    """The gateway reports the outcome of the last run only.
 
-    @property
-    def in_progress(self) -> bool:
-        return self.status.lower() in ("running", "in_progress", "spawning")
+    ``speedtest_status`` in the ``www`` subsystem carries a terminal value
+    (``Idle`` before the first run, ``Success`` after one). A run takes under
+    twenty seconds and the health snapshot does not advance while it is in
+    flight, so no poll can observe a "running" value; the state of a run in
+    progress lives behind a separate write command this client does not issue.
+    """
 
     @classmethod
     def from_api(cls, d: dict[str, Any]) -> Speedtest:

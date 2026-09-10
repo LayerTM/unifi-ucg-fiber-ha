@@ -3,6 +3,22 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.2]
+
+### Removed
+
+- **The "Speedtest in progress" binary sensor.** It could never report anything
+  but *off*. The gateway's health data carries the outcome of the last speedtest
+  — `Idle` before the first run, `Success` after one — and no in-flight value:
+  on a UCG-Fiber (UniFi OS 5.1.33, Network 10.6.101) the health snapshot does not
+  advance at all while a run is in flight, jumping straight from the previous
+  result to the new one. A run also finishes in under twenty seconds, which is
+  shorter than the fastest polling this integration offers, so even a gateway
+  that did publish the state could not be observed publishing it. The sensor is
+  removed from the entity registry on upgrade rather than left behind
+  permanently unavailable; the last-run, download, upload and ping sensors are
+  unaffected, and so is the **Run speedtest** control.
+
 ## [0.2.1]
 
 ### Fixed

@@ -82,9 +82,8 @@ sub-device per WAN uplink and per populated SFP+ port.
   firmware-update-available and site-to-site VPN.
 - **ISP & internet** — ISP name, ISP ASN, internet latency, and an internet
   connectivity binary sensor.
-- **Speedtest** — last download / upload / ping and last-run time, an
-  *in-progress* binary sensor, and (with controls enabled) a **Run speedtest**
-  button.
+- **Speedtest** — last download / upload / ping and last-run time, and (with
+  controls enabled) a **Run speedtest** button.
 - **Per WAN uplink** *(WAN, WAN2, …)* — link up, active-uplink, IP address,
   latency, availability %, uptime, negotiated link speed, download / upload
   throughput, and media.
