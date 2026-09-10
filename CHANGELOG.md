@@ -3,6 +3,18 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+
+- **Turning controls off now removes their buttons instead of leaving them
+  behind.** The button platform already declined to create them, which is enough
+  for an entry that never had controls — but a registry entry outlives the
+  platform that stopped providing it, so anyone who had switched controls on was
+  left with a Run speedtest and a Restart button that stayed on the device page
+  and in every dashboard naming them, permanently unavailable. Switching controls
+  back on recreates them.
+
 ## [0.2.0]
 
 ### Added
