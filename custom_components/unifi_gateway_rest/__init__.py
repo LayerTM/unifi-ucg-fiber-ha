@@ -48,6 +48,7 @@ from .const import (
     DOMAIN,
     ISSUE_TLS_INSECURE,
     PLATFORMS,
+    WITHDRAWN_UNIQUE_ID_SUFFIXES,
 )
 from .coordinator import GatewayDataUpdateCoordinator
 from .entity import hub_device_info
@@ -133,6 +134,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GatewayConfigEntry) -> b
         )
 
     _async_prune_control_entities(hass, entry, keep=action_client is not None)
+    _async_prune_withdrawn_entities(hass, entry)
 
     entry.runtime_data = GatewayRuntimeData(coordinator, action_client)
     # Register the hub before the platforms load: a sub-device can only be linked
@@ -197,6 +199,21 @@ def _async_prune_control_entities(
     registry = er.async_get(hass)
     for existing in er.async_entries_for_config_entry(registry, entry.entry_id):
         if existing.domain in CONTROL_PLATFORMS:
+            registry.async_remove(existing.entity_id)
+
+
+def _async_prune_withdrawn_entities(hass: HomeAssistant, entry: GatewayConfigEntry) -> None:
+    """Remove entities this integration no longer creates.
+
+    A platform that stops describing an entity does not remove it: the registry
+    entry survives, so it stays on the device page and in every dashboard that
+    references it, permanently unavailable. The suffixes live in
+    ``WITHDRAWN_UNIQUE_ID_SUFFIXES`` so withdrawing the next one is a single
+    line there rather than another cleanup written here.
+    """
+    registry = er.async_get(hass)
+    for existing in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if existing.unique_id.endswith(WITHDRAWN_UNIQUE_ID_SUFFIXES):
             registry.async_remove(existing.entity_id)
 
 

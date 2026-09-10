@@ -130,7 +130,6 @@ def test_health_fields(stat_health: dict[str, Any]) -> None:
 def test_health_speedtest_idle(stat_health: dict[str, Any]) -> None:
     st = Health.from_api(stat_health["data"]).speedtest
     assert st.status == "Idle"
-    assert st.in_progress is False
     assert st.last_run is None  # lastrun == 0 -> never
     assert st.ping_ms == 0
 
@@ -145,13 +144,10 @@ def test_health_speedtest_completed() -> None:
             "speedtest_lastrun": 1_700_000_000,
         }
     )
+    assert st.status == "Success"
     assert st.download_mbps == 934.2
     assert st.upload_mbps == 221.8
     assert st.last_run == datetime.fromtimestamp(1_700_000_000, tz=UTC)
-
-
-def test_health_speedtest_running() -> None:
-    assert models.Speedtest.from_api({"speedtest_status": "Running"}).in_progress is True
 
 
 def test_vpn(stat_health: dict[str, Any]) -> None:

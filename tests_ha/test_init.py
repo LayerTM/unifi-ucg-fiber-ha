@@ -77,12 +77,6 @@ async def test_binary_sensors(
     assert internet_id is not None
     assert hass.states.get(internet_id).state == "on"
 
-    speedtest_id = registry.async_get_entity_id(
-        "binary_sensor", "unifi_gateway_rest", f"{uid}_speedtest_in_progress"
-    )
-    assert speedtest_id is not None
-    assert hass.states.get(speedtest_id).state == "off"
-
     # SFP problem sub-device binary sensor exists for the present module (port 7)
     sfp_problem = registry.async_get_entity_id(
         "binary_sensor", "unifi_gateway_rest", f"{uid}_sfp7_problem"
@@ -164,3 +158,33 @@ async def test_subdevices_link_to_hub_by_registry_id(
     children = [device for device in devices if device.id != hub.id]
     assert children, "expected WAN / SFP sub-devices"
     assert all(device.via_device_id == hub.id for device in children)
+
+
+async def test_withdrawn_speedtest_entity_is_removed_on_upgrade(
+    hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: AsyncMock
+) -> None:
+    """An entity left in the registry by an earlier version does not survive.
+
+    Without the prune it stays on the device page permanently unavailable,
+    because the platform that stopped describing it cannot remove it.
+    """
+    config_entry.add_to_hass(hass)
+    registry = er.async_get(hass)
+    stale = registry.async_get_or_create(
+        "binary_sensor",
+        DOMAIN,
+        f"{config_entry.unique_id}_speedtest_in_progress",
+        config_entry=config_entry,
+    )
+    assert registry.async_get(stale.entity_id) is not None
+
+    with _patch(mock_client):
+        assert await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert registry.async_get(stale.entity_id) is None
+    # a live entity of the same platform is untouched
+    assert (
+        registry.async_get_entity_id("binary_sensor", DOMAIN, f"{config_entry.unique_id}_internet")
+        is not None
+    )

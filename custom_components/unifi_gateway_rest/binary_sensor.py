@@ -66,13 +66,6 @@ BINARY_SENSORS: tuple[GatewayBinaryDescription, ...] = (
         value_fn=lambda d: d.sysinfo.update_available if d.sysinfo else None,
     ),
     GatewayBinaryDescription(
-        key="speedtest_in_progress",
-        translation_key="speedtest_in_progress",
-        device_class=BinarySensorDeviceClass.RUNNING,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: d.health.speedtest.in_progress if d.health else None,
-    ),
-    GatewayBinaryDescription(
         key="vpn_site_to_site",
         translation_key="vpn_site_to_site",
         device_class=BinarySensorDeviceClass.CONNECTIVITY,

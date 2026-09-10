@@ -22,6 +22,12 @@ PLATFORMS: Final = [
 # here rather than by remembering to edit two places.
 CONTROL_PLATFORMS: Final = (Platform.BUTTON,)
 
+# Entities this integration used to create and no longer does, by the suffix of
+# their unique id. A registry entry outlives the platform that stopped providing
+# it, so without this an upgrade leaves the entity on the device page forever,
+# permanently unavailable. Withdrawing another entity is one line here.
+WITHDRAWN_UNIQUE_ID_SUFFIXES: Final = ("_speedtest_in_progress",)
+
 # config-entry keys (host/port/username/password/api_key/verify_ssl reuse HA consts)
 CONF_AUTH_METHOD: Final = "auth_method"
 AUTH_API_KEY: Final = "api_key"
