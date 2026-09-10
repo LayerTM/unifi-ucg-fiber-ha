@@ -34,7 +34,7 @@ class StubAuth(AbstractAuth):
 
 
 def _transport(session: FakeSession, auth: AbstractAuth) -> GatewayTransport:
-    return GatewayTransport(session, "gw.local", auth, verify_ssl=False)  # type: ignore[arg-type]
+    return GatewayTransport(session, "gw.local", auth, ssl=False)  # type: ignore[arg-type]
 
 
 async def test_get_json_ok() -> None:

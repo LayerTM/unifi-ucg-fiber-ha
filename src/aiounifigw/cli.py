@@ -7,7 +7,14 @@ environment:
 * ``UNIFI_GW_APIKEY`` — API key (recommended), OR
 * ``UNIFI_GW_USER`` + ``UNIFI_GW_PASS`` — local account
 * ``UNIFI_GW_SITE`` — site name (default ``default``)
-* ``UNIFI_GW_VERIFY_SSL`` — set truthy to verify TLS (off by default)
+* ``UNIFI_GW_PORT`` — console port (default 443)
+
+TLS trust, in order of precedence:
+
+* ``UNIFI_GW_CERT_FINGERPRINT`` — accept only this SHA-256 certificate
+  (print it with ``unifi-gateway fingerprint``)
+* ``UNIFI_GW_VERIFY_SSL`` — set truthy to verify against the system CA store
+* neither — **unverified**, the historical behaviour of these developer tools
 """
 
 from __future__ import annotations
@@ -21,7 +28,9 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from .summary import make_action_client, make_client, read_all, status_payload
+from .exceptions import GwError
+from .summary import env_host, env_port, make_action_client, make_client, read_all, status_payload
+from .tls import async_probe_fingerprint
 
 app = typer.Typer(add_completion=False, help="Query a UniFi OS gateway (UCG/UDM/UXG) locally.")
 console = Console()
@@ -93,6 +102,24 @@ def speedtest(yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirma
 
     _run(_go())
     console.print("[green]speedtest triggered[/] — results appear after it finishes")
+
+
+@app.command()
+def fingerprint() -> None:
+    """Print the SHA-256 fingerprint of the gateway's TLS certificate.
+
+    Read it here, compare it with the one the console shows, then pin it — via
+    UNIFI_GW_CERT_FINGERPRINT for these tools, or by accepting it in the Home
+    Assistant setup flow. Nothing is trusted by running this.
+    """
+    try:
+        value = _run(async_probe_fingerprint(env_host(), env_port()))
+    except GwError as err:
+        console.print(f"[red]{err}[/]")
+        raise typer.Exit(1) from err
+    # Plain, unwrapped: this is a value to copy or capture in `$(...)`, and a
+    # 95-character fingerprint is wider than many terminals.
+    typer.echo(value)
 
 
 def main() -> None:

@@ -19,7 +19,6 @@ from .const import (
     DEFAULT_PORT,
     DEFAULT_SITE,
     DEFAULT_TIMEOUT,
-    DEFAULT_VERIFY_SSL,
     PATH_CMD_DEVMGR,
 )
 from .transport import GatewayTransport
@@ -37,7 +36,7 @@ class GatewayActionClient:
         site: str = DEFAULT_SITE,
         port: int = DEFAULT_PORT,
         use_ssl: bool = True,
-        verify_ssl: bool = DEFAULT_VERIFY_SSL,
+        ssl: bool | aiohttp.Fingerprint = True,
         timeout: int = DEFAULT_TIMEOUT,
     ) -> None:
         self._site = site
@@ -47,7 +46,7 @@ class GatewayActionClient:
             auth,
             port=port,
             use_ssl=use_ssl,
-            verify_ssl=verify_ssl,
+            ssl=ssl,
             timeout=timeout,
         )
 

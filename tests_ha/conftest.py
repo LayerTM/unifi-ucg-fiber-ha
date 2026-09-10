@@ -15,11 +15,14 @@ from custom_components.unifi_gateway_rest.aiounifigw import (
     Health,
     SysInfo,
     SystemIdentity,
+    TlsMode,
 )
 from custom_components.unifi_gateway_rest.const import (
     AUTH_API_KEY,
     CONF_AUTH_METHOD,
+    CONF_CERT_FINGERPRINT,
     CONF_SITE,
+    CONF_TLS_MODE,
     DOMAIN,
 )
 from homeassistant.const import (
@@ -141,8 +144,35 @@ def mock_client(gateway_models: dict[str, Any]) -> AsyncMock:
     return client
 
 
+PINNED_FINGERPRINT = "ab:" * 31 + "ab"
+
+
 @pytest.fixture
 def config_entry() -> MockConfigEntry:
+    """An entry that pins the gateway's certificate — the shape new setups get."""
+    return MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="aa:bb:cc:00:11:22",
+        title="UCG Fiber (192.0.2.10)",
+        data={
+            CONF_HOST: "192.0.2.10",
+            CONF_PORT: 443,
+            CONF_SITE: "default",
+            CONF_TLS_MODE: TlsMode.FINGERPRINT,
+            CONF_CERT_FINGERPRINT: PINNED_FINGERPRINT,
+            CONF_AUTH_METHOD: AUTH_API_KEY,
+            CONF_API_KEY: "test-key",
+        },
+    )
+
+
+@pytest.fixture
+def legacy_config_entry() -> MockConfigEntry:
+    """An entry created before pinning existed: verify_ssl only, and it was off.
+
+    Kept as its own fixture rather than mutated in place, because the migration
+    it exercises is a property of entries already on disk.
+    """
     return MockConfigEntry(
         domain=DOMAIN,
         unique_id="aa:bb:cc:00:11:22",

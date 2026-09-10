@@ -248,6 +248,7 @@ cli = [
     { name = "typer" },
 ]
 dev = [
+    { name = "cryptography" },
     { name = "mypy" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -264,6 +265,7 @@ mcp = [
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.9" },
+    { name = "cryptography", marker = "extra == 'dev'", specifier = ">=43" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.11" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },

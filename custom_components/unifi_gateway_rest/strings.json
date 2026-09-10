@@ -8,13 +8,13 @@
           "host": "Host",
           "port": "Port",
           "site": "Site",
-          "verify_ssl": "Verify SSL certificate",
+          "tls_mode": "Certificate trust",
           "auth_method": "Authentication method"
         },
         "data_description": {
           "host": "IP address or hostname of the gateway console.",
           "site": "UniFi Network site name (usually 'default').",
-          "verify_ssl": "UniFi OS ships a self-signed certificate; leave off unless you pinned a CA."
+          "tls_mode": "UniFi OS ships a self-signed certificate. Pinning records the one it serves now and refuses any other; the next screen shows it so you can compare it with the console."
         }
       },
       "reconfigure": {
@@ -23,9 +23,17 @@
           "host": "Host",
           "port": "Port",
           "site": "Site",
-          "verify_ssl": "Verify SSL certificate",
+          "tls_mode": "Certificate trust",
           "auth_method": "Authentication method"
         }
+      },
+      "tls_fingerprint": {
+        "title": "Trust this certificate",
+        "description": "The gateway is serving a certificate with this SHA-256 fingerprint:\n\n`{fingerprint}`\n\nCompare it with the one the console shows before continuing. From now on only this certificate is accepted.\n\nThis assumes the connection you are looking at right now is not already being intercepted \u2014 it is not the same assurance as a certificate signed by a public authority."
+      },
+      "tls_fingerprint_changed": {
+        "title": "This is not the certificate on file",
+        "description": "This entry pinned:\n\n`{previous}`\n\nThe gateway is now serving:\n\n`{fingerprint}`\n\nA reissued certificate looks exactly like an impersonated one from here. Continue only if you replaced the certificate yourself, or can compare this value with the console's own screen. Continuing replaces the pinned certificate."
       },
       "api_key": {
         "title": "API key",
@@ -48,6 +56,7 @@
       }
     },
     "error": {
+      "cert_mismatch": "The gateway presented a different certificate than the one this entry pinned. Nothing was sent to it \u2014 resolve the certificate warning first.",
       "invalid_auth": "Invalid authentication.",
       "cannot_connect": "Failed to connect.",
       "insufficient_permissions": "This credential cannot read the gateway API. Use a local account or a full-access API key.",
@@ -75,7 +84,46 @@
       }
     }
   },
+  "issues": {
+    "cert_mismatch": {
+      "title": "The certificate of {host} changed",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "The certificate of {host} changed",
+            "description": "This entry accepts only:\n\n`{expected}`\n\nThe gateway is serving:\n\n`{got}`\n\nEither the certificate was reissued, or something is impersonating the gateway. Compare the new value with the console's own screen before accepting it \u2014 credentials are withheld while the certificate does not match.\n\nAccepting pins the new certificate and reloads the integration."
+          }
+        },
+        "abort": {
+          "cannot_connect": "The gateway could not be reached, so its certificate could not be re-read. Nothing was changed.",
+          "entry_not_found": "That configuration entry no longer exists."
+        }
+      }
+    },
+    "tls_insecure": {
+      "title": "{host} is set up without certificate checks",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Start checking the certificate of {host}",
+            "description": "This entry was created before certificate pinning existed and accepts any certificate, so nothing proves the host answering is your gateway.\n\nThe gateway is serving:\n\n`{fingerprint}`\n\nCompare it with the console's own screen, then accept it to pin it. Pinning assumes this connection is not already being intercepted \u2014 it is not the same assurance as a certificate signed by a public authority.\n\nYou can also dismiss this and carry on unverified."
+          }
+        },
+        "abort": {
+          "cannot_connect": "The gateway could not be reached, so its certificate could not be read. Nothing was changed.",
+          "entry_not_found": "That configuration entry no longer exists."
+        }
+      }
+    }
+  },
   "selector": {
+    "tls_mode": {
+      "options": {
+        "fingerprint": "Pin this gateway's certificate (recommended)",
+        "ca": "Verify against the system CA store",
+        "insecure": "Accept any certificate (no assurance)"
+      }
+    },
     "auth_method": {
       "options": {
         "api_key": "API key (recommended, read-only)",

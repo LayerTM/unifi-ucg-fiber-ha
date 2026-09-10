@@ -135,7 +135,7 @@ def is_redacted(key: str) -> bool:
     return any(s in k for s in REDACT_SUBSTR)
 
 
-def type_map(obj: dict, depth: int = 0) -> dict:
+def type_map(obj: dict[str, Any], depth: int = 0) -> dict[str, Any]:
     """Structure only: key -> typename. Recurses one level into dict/list-of-dict."""
     out: dict[str, Any] = {}
     for k, v in sorted(obj.items()):
@@ -148,7 +148,7 @@ def type_map(obj: dict, depth: int = 0) -> dict:
     return out
 
 
-def safe_values(obj: dict) -> dict:
+def safe_values(obj: dict[str, Any]) -> dict[str, Any]:
     """Whitelisted, PII-redacted values pulled from a dict (shallow)."""
     out: dict[str, Any] = {}
     for k, v in obj.items():
@@ -159,9 +159,9 @@ def safe_values(obj: dict) -> dict:
     return out
 
 
-def find_gateway(devices: list[dict]) -> dict | None:
+def find_gateway(devices: list[dict[str, Any]]) -> dict[str, Any] | None:
     gw_types = {"ugw", "uxg", "ucg", "udm"}
-    scored: list[tuple[int, dict]] = []
+    scored: list[tuple[int, dict[str, Any]]] = []
     for d in devices:
         if not isinstance(d, dict):
             continue
@@ -184,7 +184,7 @@ def find_gateway(devices: list[dict]) -> dict | None:
     return scored[0][1]
 
 
-def summarize(raw: Any) -> dict:
+def summarize(raw: Any) -> dict[str, Any]:
     devices = raw.get("data", raw) if isinstance(raw, dict) else raw
     if not isinstance(devices, list):
         return {"error": "unexpected shape; expected a list or {data:[...]}"}
@@ -332,8 +332,8 @@ def main() -> int:
     sfp = rep["sfp_optical"]
     print(f"  SFP-like ports: {sfp['any_sfp_like_port']}  ->  ", end="")
     if isinstance(sfp["ports"], list):
-        for e in sfp["ports"]:
-            print(f"port{e.get('port_idx')} keys={e.get('sfp_keys_present')}", end="  ")
+        for port in sfp["ports"]:
+            print(f"port{port.get('port_idx')} keys={port.get('sfp_keys_present')}", end="  ")
         print()
     else:
         print(sfp["ports"])

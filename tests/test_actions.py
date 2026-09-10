@@ -11,7 +11,7 @@ CMD = "https://gw.local/proxy/network/api/s/default/cmd/devmgr"
 
 
 def _client(session: FakeSession) -> GatewayActionClient:
-    return GatewayActionClient(session, "gw.local", ApiKeyAuth("k"), verify_ssl=False)  # type: ignore[arg-type]
+    return GatewayActionClient(session, "gw.local", ApiKeyAuth("k"), ssl=False)  # type: ignore[arg-type]
 
 
 async def test_run_speedtest_posts_command() -> None:

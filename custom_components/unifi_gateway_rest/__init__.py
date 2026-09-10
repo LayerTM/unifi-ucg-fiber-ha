@@ -15,11 +15,11 @@ from homeassistant.const import (
     CONF_PORT,
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
-    CONF_VERIFY_SSL,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceEntry
 
@@ -29,8 +29,10 @@ from .aiounifigw import (
     GatewayClient,
     GwApiError,
     GwAuthError,
+    GwCertificateMismatch,
     GwConnectionError,
     SessionAuth,
+    TlsMode,
     probe,
 )
 from .aiounifigw.auth import AbstractAuth
@@ -41,12 +43,14 @@ from .const import (
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SITE,
-    DEFAULT_VERIFY_SSL,
     DOMAIN,
+    ISSUE_TLS_INSECURE,
     PLATFORMS,
 )
 from .coordinator import GatewayDataUpdateCoordinator
 from .entity import hub_device_info
+from .issues import clear_cert_mismatch, raise_cert_mismatch
+from .tls import ssl_for_entry, tls_mode_of
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -72,10 +76,12 @@ def build_auth(data: Mapping[str, Any]) -> AbstractAuth:
 async def async_setup_entry(hass: HomeAssistant, entry: GatewayConfigEntry) -> bool:
     """Set up UniFi Gateway from a config entry."""
     data = entry.data
-    verify_ssl = data.get(CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL)
     port = data.get(CONF_PORT, DEFAULT_PORT)
     site = data.get(CONF_SITE, DEFAULT_SITE)
-    session = async_get_clientsession(hass, verify_ssl=verify_ssl)
+    ssl = ssl_for_entry(data)
+    # The trust is decided per request, so the shared verifying session is the
+    # right one to take even when a self-signed certificate is being pinned.
+    session = async_get_clientsession(hass)
     client = GatewayClient(
         session,
         data[CONF_HOST],
@@ -83,18 +89,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: GatewayConfigEntry) -> b
         site=site,
         port=port,
         use_ssl=True,
-        verify_ssl=verify_ssl,
+        ssl=ssl,
     )
 
     try:
         await client.async_prepare()
         capabilities = await probe(client)
+    except GwCertificateMismatch as err:
+        # NOT ConfigEntryAuthFailed: the credentials are fine and asking for them
+        # again would teach the user to retype a password at exactly the moment
+        # something may be impersonating their gateway. Raise a repair instead,
+        # which shows both fingerprints and lets them accept the new one.
+        raise_cert_mismatch(hass, entry, err)
+        raise ConfigEntryNotReady(str(err)) from err
     except GwAuthError as err:
         raise ConfigEntryAuthFailed(str(err)) from err
     except (GwConnectionError, GwApiError) as err:
         # A console that is still booting, or a reverse proxy answering 502/503,
         # is transient: retry rather than leaving the entry permanently failed.
         raise ConfigEntryNotReady(str(err)) from err
+
+    _async_review_tls(hass, entry)
 
     scan_interval = int(entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
     coordinator = GatewayDataUpdateCoordinator(hass, entry, client, capabilities, scan_interval)
@@ -112,7 +127,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: GatewayConfigEntry) -> b
             site=site,
             port=port,
             use_ssl=True,
-            verify_ssl=verify_ssl,
+            ssl=ssl,
         )
 
     entry.runtime_data = GatewayRuntimeData(coordinator, action_client)
@@ -151,3 +166,28 @@ async def async_remove_config_entry_device(
 async def _async_reload(hass: HomeAssistant, entry: GatewayConfigEntry) -> None:
     """Reload the entry when its options change."""
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+def _async_review_tls(hass: HomeAssistant, entry: GatewayConfigEntry) -> None:
+    """Clear a resolved mismatch, and flag an entry that verifies nothing.
+
+    The insecure issue exists because entries created before pinning keep working
+    unchanged on upgrade, which is deliberate — silently pinning whatever the
+    gateway served during an upgrade would record a certificate nobody looked at.
+    The user is asked once, here, and can dismiss it.
+    """
+    clear_cert_mismatch(hass, entry)
+    issue_id = f"{ISSUE_TLS_INSECURE}_{entry.entry_id}"
+    if tls_mode_of(entry.data) is not TlsMode.INSECURE:
+        ir.async_delete_issue(hass, DOMAIN, issue_id)
+        return
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        issue_id,
+        is_fixable=True,
+        severity=ir.IssueSeverity.WARNING,
+        translation_key=ISSUE_TLS_INSECURE,
+        translation_placeholders={"host": entry.data[CONF_HOST]},
+        data={"entry_id": entry.entry_id},
+    )

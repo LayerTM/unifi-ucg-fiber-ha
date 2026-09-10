@@ -26,6 +26,14 @@ from .models import (
     Vpn,
     Wan,
 )
+from .tls import (
+    GwCertificateMismatch,
+    TlsMode,
+    async_probe_fingerprint,
+    format_fingerprint,
+    parse_fingerprint,
+    ssl_param,
+)
 from .transport import GatewayTransport
 
 __all__ = [
@@ -39,6 +47,7 @@ __all__ = [
     "GwApiError",
     "GwAuthError",
     "GwCapabilityError",
+    "GwCertificateMismatch",
     "GwConnectionError",
     "GwError",
     "Health",
@@ -50,7 +59,12 @@ __all__ = [
     "SysInfo",
     "SystemIdentity",
     "Temperature",
+    "TlsMode",
     "Vpn",
     "Wan",
+    "async_probe_fingerprint",
+    "format_fingerprint",
+    "parse_fingerprint",
     "probe",
+    "ssl_param",
 ]

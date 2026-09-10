@@ -5,32 +5,40 @@ from __future__ import annotations
 from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
 
-from custom_components.unifi_gateway_rest.aiounifigw import GwAuthError, GwConnectionError
+from custom_components.unifi_gateway_rest.aiounifigw import (
+    GwAuthError,
+    GwCertificateMismatch,
+    GwConnectionError,
+    TlsMode,
+)
 from custom_components.unifi_gateway_rest.const import (
     AUTH_API_KEY,
     AUTH_PASSWORD,
     CONF_AUTH_METHOD,
+    CONF_CERT_FINGERPRINT,
     CONF_SITE,
+    CONF_TLS_MODE,
     DOMAIN,
 )
-from homeassistant.config_entries import SOURCE_USER
+from homeassistant.config_entries import SOURCE_RECONFIGURE, SOURCE_USER
 from homeassistant.const import (
     CONF_API_KEY,
     CONF_HOST,
     CONF_PASSWORD,
     CONF_PORT,
     CONF_USERNAME,
-    CONF_VERIFY_SSL,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from conftest import PINNED_FINGERPRINT
+
 CONNECTION = {
     CONF_HOST: "192.0.2.10",
     CONF_PORT: 443,
     CONF_SITE: "default",
-    CONF_VERIFY_SSL: False,
+    CONF_TLS_MODE: TlsMode.INSECURE,
 }
 
 
@@ -126,3 +134,135 @@ async def test_duplicate_aborts(
         )
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "already_configured"
+
+
+# --- pinning the certificate during setup -------------------------------------
+
+_FLOW_PROBE = "custom_components.unifi_gateway_rest.config_flow.async_probe_fingerprint"
+SERVED = "cd:" * 31 + "cd"
+
+
+async def test_pinning_shows_the_fingerprint_before_asking_for_credentials(
+    hass: HomeAssistant, mock_client: AsyncMock
+) -> None:
+    """The user has to be able to compare it, so it is shown on its own screen."""
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    with _patch_client(mock_client), patch(_FLOW_PROBE, AsyncMock(return_value=SERVED)):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {**CONNECTION, CONF_TLS_MODE: TlsMode.FINGERPRINT, CONF_AUTH_METHOD: AUTH_API_KEY},
+        )
+        assert result["step_id"] == "tls_fingerprint"
+        assert result["description_placeholders"]["fingerprint"] == SERVED
+
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+        assert result["step_id"] == "api_key"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_API_KEY: "test-key"}
+        )
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["data"][CONF_TLS_MODE] == TlsMode.FINGERPRINT
+    assert result["data"][CONF_CERT_FINGERPRINT] == SERVED
+
+
+async def test_choosing_a_non_pinning_mode_stores_no_fingerprint(
+    hass: HomeAssistant, mock_client: AsyncMock
+) -> None:
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    with _patch_client(mock_client):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {**CONNECTION, CONF_TLS_MODE: TlsMode.CA, CONF_AUTH_METHOD: AUTH_API_KEY},
+        )
+        assert result["step_id"] == "api_key"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_API_KEY: "test-key"}
+        )
+    assert CONF_CERT_FINGERPRINT not in result["data"]
+
+
+async def test_a_gateway_that_cannot_be_read_returns_to_the_connection_form(
+    hass: HomeAssistant, mock_client: AsyncMock
+) -> None:
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    with (
+        _patch_client(mock_client),
+        patch(_FLOW_PROBE, AsyncMock(side_effect=GwConnectionError("down"))),
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {**CONNECTION, CONF_TLS_MODE: TlsMode.FINGERPRINT, CONF_AUTH_METHOD: AUTH_API_KEY},
+        )
+    assert result["step_id"] == "user"
+    assert result["errors"] == {"base": "cannot_connect"}
+
+
+async def test_reconfigure_says_so_when_the_certificate_is_not_the_one_on_file(
+    hass: HomeAssistant, mock_client: AsyncMock, config_entry: MockConfigEntry
+) -> None:
+    """Someone reconfiguring during an impersonation must see the discrepancy.
+
+    Without this the new certificate is adopted with nothing on screen to notice.
+    """
+    config_entry.add_to_hass(hass)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": SOURCE_RECONFIGURE, "entry_id": config_entry.entry_id},
+    )
+    with _patch_client(mock_client), patch(_FLOW_PROBE, AsyncMock(return_value=SERVED)):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {**CONNECTION, CONF_TLS_MODE: TlsMode.FINGERPRINT, CONF_AUTH_METHOD: AUTH_API_KEY},
+        )
+
+    assert result["step_id"] == "tls_fingerprint_changed"
+    assert result["description_placeholders"] == {
+        "fingerprint": SERVED,
+        "previous": PINNED_FINGERPRINT,
+    }
+
+
+async def test_a_mismatch_while_validating_credentials_is_not_reported_as_bad_auth(
+    hass: HomeAssistant, mock_client: AsyncMock
+) -> None:
+    """ "Invalid credentials" would send the user to retype a password that is fine."""
+    mock_client.async_prepare = AsyncMock(
+        side_effect=GwCertificateMismatch(PINNED_FINGERPRINT, SERVED)
+    )
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    with _patch_client(mock_client):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {**CONNECTION, CONF_AUTH_METHOD: AUTH_API_KEY}
+        )
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_API_KEY: "test-key"}
+        )
+    assert result["errors"] == {"base": "cert_mismatch"}
+
+
+async def test_reconfigure_that_accepts_the_new_certificate_stores_it(
+    hass: HomeAssistant, mock_client: AsyncMock, config_entry: MockConfigEntry
+) -> None:
+    """Having been warned, the user can still accept — and then it is pinned."""
+    config_entry.add_to_hass(hass)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": SOURCE_RECONFIGURE, "entry_id": config_entry.entry_id},
+    )
+    with _patch_client(mock_client), patch(_FLOW_PROBE, AsyncMock(return_value=SERVED)):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {**CONNECTION, CONF_TLS_MODE: TlsMode.FINGERPRINT, CONF_AUTH_METHOD: AUTH_API_KEY},
+        )
+        assert result["step_id"] == "tls_fingerprint_changed"
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+        assert result["step_id"] == "api_key"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_API_KEY: "test-key"}
+        )
+        await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"
+    assert config_entry.data[CONF_CERT_FINGERPRINT] == SERVED

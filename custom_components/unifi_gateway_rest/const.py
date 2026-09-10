@@ -6,6 +6,8 @@ from typing import Final
 
 from homeassistant.const import Platform
 
+from .aiounifigw import TlsMode
+
 DOMAIN: Final = "unifi_gateway_rest"
 
 PLATFORMS: Final = [
@@ -28,6 +30,16 @@ CONF_ENABLE_CONTROLS: Final = "enable_controls"
 DEFAULT_ENABLE_CONTROLS: Final = False
 
 DEFAULT_PORT: Final = 443
+
+# TLS trust. The gateway's certificate is self-signed, so the choice is between
+# pinning it and not checking at all; pinning is the default. CONF_VERIFY_SSL is
+# still read once, to migrate entries created before this existed.
+CONF_TLS_MODE: Final = "tls_mode"
+CONF_CERT_FINGERPRINT: Final = "cert_fingerprint"
+DEFAULT_TLS_MODE: Final = TlsMode.FINGERPRINT
+ISSUE_CERT_MISMATCH: Final = "cert_mismatch"
+ISSUE_TLS_INSECURE: Final = "tls_insecure"
+
 DEFAULT_VERIFY_SSL: Final = False
 DEFAULT_SCAN_INTERVAL: Final = 30
 MIN_SCAN_INTERVAL: Final = 15

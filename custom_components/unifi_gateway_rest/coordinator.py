@@ -20,11 +20,13 @@ from .aiounifigw import (
     GwApiError,
     GwAuthError,
     GwCapabilityError,
+    GwCertificateMismatch,
     GwConnectionError,
     Health,
     SysInfo,
 )
 from .const import DOMAIN
+from .issues import clear_cert_mismatch, raise_cert_mismatch
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -84,8 +86,24 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
             )
         except GwAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
+        except GwCertificateMismatch as err:
+            # Must precede GwConnectionError, its base class. A certificate that
+            # changes while the integration is running is the same event as one
+            # that changes before setup, and it has to reach the user the same
+            # way: as a repair naming both fingerprints. Left to the branch
+            # below it becomes an ordinary UpdateFailed, and the entities simply
+            # go unavailable with the reason buried in the log.
+            if self.config_entry is not None:
+                raise_cert_mismatch(self.hass, self.config_entry, err)
+            raise UpdateFailed(str(err)) from err
         except (GwConnectionError, GwApiError) as err:
             raise UpdateFailed(str(err)) from err
+        # Symmetric with raising it above. Without this the repair outlives the
+        # condition: the gateway recovers, the entities come back, and a scary
+        # notification stays on a healthy system — offering to pin a certificate
+        # that is no longer served.
+        if self.config_entry is not None:
+            clear_cert_mismatch(self.hass, self.config_entry)
         return GwData(device=device, health=health, sysinfo=sysinfo)
 
 

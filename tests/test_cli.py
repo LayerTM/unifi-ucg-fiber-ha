@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
+import aiohttp
 import pytest
 from typer.testing import CliRunner
 
+from _fake import TlsServer
 from aiounifigw import summary
 from aiounifigw.auth import ApiKeyAuth, SessionAuth
 from aiounifigw.cli import app
@@ -56,12 +59,10 @@ def test_env_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("UNIFI_GW_PASS", "pw")
     assert isinstance(summary.env_auth(), SessionAuth)
 
-    monkeypatch.setenv("UNIFI_GW_VERIFY_SSL", "yes")
-    assert summary.env_verify_ssl() is True
-    monkeypatch.setenv("UNIFI_GW_VERIFY_SSL", "0")
-    assert summary.env_verify_ssl() is False
     monkeypatch.setenv("UNIFI_GW_SITE", "branch")
     assert summary.env_site() == "branch"
+    monkeypatch.setenv("UNIFI_GW_PORT", "8443")
+    assert summary.env_port() == 8443
 
 
 def _patch_read(models: tuple[Any, Any, Any]) -> Any:
@@ -101,3 +102,64 @@ def test_cli_speedtest_aborts_without_yes() -> None:
         result = runner.invoke(app, ["speedtest"], input="n\n")
     assert result.exit_code != 0
     m.assert_not_called()
+
+
+# --- TLS trust for the developer tools, and the command that shows a fingerprint
+
+
+def test_ssl_from_env_pins_when_a_fingerprint_is_set(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("UNIFI_GW_CERT_FINGERPRINT", "aa:" * 31 + "aa")
+    monkeypatch.delenv("UNIFI_GW_VERIFY_SSL", raising=False)
+    assert isinstance(summary.ssl_from_env(), aiohttp.Fingerprint)
+
+
+@pytest.mark.parametrize("value", ["1", "true", "YES", "on"])
+def test_ssl_from_env_verifies_against_the_ca_store(
+    monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
+    monkeypatch.delenv("UNIFI_GW_CERT_FINGERPRINT", raising=False)
+    monkeypatch.setenv("UNIFI_GW_VERIFY_SSL", value)
+    assert summary.ssl_from_env() is True
+
+
+def test_ssl_from_env_defaults_to_unverified(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Documented rather than accidental: these are developer tools."""
+    monkeypatch.delenv("UNIFI_GW_CERT_FINGERPRINT", raising=False)
+    monkeypatch.delenv("UNIFI_GW_VERIFY_SSL", raising=False)
+    assert summary.ssl_from_env() is False
+
+
+def test_a_pinned_fingerprint_wins_over_ca_verification(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Both set is not ambiguous: the specific certificate is the stronger claim."""
+    monkeypatch.setenv("UNIFI_GW_CERT_FINGERPRINT", "aa:" * 31 + "aa")
+    monkeypatch.setenv("UNIFI_GW_VERIFY_SSL", "1")
+    assert isinstance(summary.ssl_from_env(), aiohttp.Fingerprint)
+
+
+async def test_the_cli_prints_the_fingerprint_it_tells_people_to_compare(
+    tls_server: TlsServer, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The README sends people to this command, so it has to print the value.
+
+    Against the generated certificate, what it prints must equal what the pinning
+    path would accept — otherwise the instruction sends them to compare the wrong
+    number.
+    """
+    monkeypatch.setenv("UNIFI_GW_HOST", "127.0.0.1")
+    monkeypatch.setenv("UNIFI_GW_PORT", str(tls_server.port))
+    # The command calls asyncio.run(), which cannot run inside this test's loop —
+    # and a RuntimeError from that would look exactly like a failed connection.
+    result = await asyncio.to_thread(CliRunner().invoke, app, ["fingerprint"])
+    assert result.exit_code == 0, result.output
+    assert result.stdout.strip() == tls_server.fingerprint
+
+
+async def test_the_cli_fingerprint_reports_an_unreachable_console(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("UNIFI_GW_HOST", "127.0.0.1")
+    monkeypatch.setenv("UNIFI_GW_PORT", "9")
+    result = await asyncio.to_thread(CliRunner().invoke, app, ["fingerprint"])
+    assert result.exit_code == 1
+    # Exit 1 must come from the unreachable console, not from a broken harness.
+    assert "could not read the certificate" in result.output

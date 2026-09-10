@@ -26,6 +26,7 @@ from .const import (
     PATH_LOGIN,
 )
 from .exceptions import GwAuthError
+from .tls import mismatch_from
 
 
 class AbstractAuth(ABC):
@@ -38,13 +39,21 @@ class AbstractAuth(ABC):
         """Return auth headers to attach to every request."""
 
     async def async_prepare(
-        self, session: aiohttp.ClientSession, base_url: str, *, ssl: bool = True
+        self,
+        session: aiohttp.ClientSession,
+        base_url: str,
+        *,
+        ssl: bool | aiohttp.Fingerprint = True,
     ) -> None:
         """Perform any handshake needed before the first request (default: none)."""
         return None
 
     async def async_reauth(
-        self, session: aiohttp.ClientSession, base_url: str, *, ssl: bool = True
+        self,
+        session: aiohttp.ClientSession,
+        base_url: str,
+        *,
+        ssl: bool | aiohttp.Fingerprint = True,
     ) -> bool:
         """Re-authenticate after a 401. Return True if a retry is worthwhile."""
         return False
@@ -82,21 +91,33 @@ class SessionAuth(AbstractAuth):
         return headers
 
     async def async_prepare(
-        self, session: aiohttp.ClientSession, base_url: str, *, ssl: bool = True
+        self,
+        session: aiohttp.ClientSession,
+        base_url: str,
+        *,
+        ssl: bool | aiohttp.Fingerprint = True,
     ) -> None:
         await self._login(session, base_url, ssl)
 
     async def async_reauth(
-        self, session: aiohttp.ClientSession, base_url: str, *, ssl: bool = True
+        self,
+        session: aiohttp.ClientSession,
+        base_url: str,
+        *,
+        ssl: bool | aiohttp.Fingerprint = True,
     ) -> bool:
         await self._login(session, base_url, ssl)
         return True
 
-    async def _login(self, session: aiohttp.ClientSession, base_url: str, ssl: bool) -> None:
+    async def _login(
+        self, session: aiohttp.ClientSession, base_url: str, ssl: bool | aiohttp.Fingerprint
+    ) -> None:
         # 1) prime CSRF from the console root
         try:
             async with session.get(f"{base_url}/", ssl=ssl) as resp:
                 self._capture(resp)
+        except aiohttp.ServerFingerprintMismatch as err:
+            raise mismatch_from(err) from err
         except aiohttp.ClientError as err:
             raise GwAuthError(f"could not reach console: {err}") from err
 
@@ -117,6 +138,11 @@ class SessionAuth(AbstractAuth):
                 if resp.status >= 400:
                     raise GwAuthError(f"login failed with status {resp.status}")
                 self._capture(resp)
+        except aiohttp.ServerFingerprintMismatch as err:
+            # A swapped certificate is not a bad password. Misfiling it as one
+            # makes Home Assistant tear the entry down and demand credentials
+            # that were always correct.
+            raise mismatch_from(err) from err
         except aiohttp.ClientError as err:
             raise GwAuthError(f"login request failed: {err}") from err
 

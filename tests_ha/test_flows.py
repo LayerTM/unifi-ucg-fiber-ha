@@ -6,21 +6,27 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest.mock import AsyncMock, patch
 
-from custom_components.unifi_gateway_rest.aiounifigw import Capabilities
+from custom_components.unifi_gateway_rest.aiounifigw import Capabilities, TlsMode
 from custom_components.unifi_gateway_rest.const import (
     AUTH_API_KEY,
     CONF_AUTH_METHOD,
     CONF_ENABLE_CONTROLS,
     CONF_SITE,
+    CONF_TLS_MODE,
 )
-from homeassistant.const import CONF_API_KEY, CONF_HOST, CONF_PORT, CONF_VERIFY_SSL
+from homeassistant.const import CONF_API_KEY, CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 CAPS = Capabilities(device=True, health=True, sysinfo=True)
-CONNECTION = {CONF_HOST: "192.0.2.10", CONF_PORT: 443, CONF_SITE: "default", CONF_VERIFY_SSL: False}
+CONNECTION = {
+    CONF_HOST: "192.0.2.10",
+    CONF_PORT: 443,
+    CONF_SITE: "default",
+    CONF_TLS_MODE: TlsMode.INSECURE,
+}
 
 
 @contextmanager

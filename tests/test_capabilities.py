@@ -11,7 +11,7 @@ BASE = "https://gw.local/proxy/network/api/s/default"
 
 
 def _client(session: FakeSession) -> GatewayClient:
-    return GatewayClient(session, "gw.local", ApiKeyAuth("k"), verify_ssl=False)  # type: ignore[arg-type]
+    return GatewayClient(session, "gw.local", ApiKeyAuth("k"), ssl=False)  # type: ignore[arg-type]
 
 
 async def test_probe_all_reachable(

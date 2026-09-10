@@ -5,7 +5,49 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- **The gateway's certificate is trusted on first use instead of ignored.** A
+  UniFi OS console serves a self-signed certificate, so CA verification cannot
+  succeed against one and the previous answer was to verify nothing — which also
+  gave up any assurance that the host answering was the gateway. Setup now reads
+  the certificate, shows its SHA-256 fingerprint for you to compare with the
+  console's own screen, and accepts only that certificate afterwards. The check
+  runs immediately after the TLS handshake and before the request is written, so
+  credentials never reach an impostor. CA verification and "accept anything"
+  remain available as explicit choices.
+
+  Trust on first use assumes the first contact was not intercepted; it is **not**
+  equivalent to a certificate signed by a public authority. That is why the
+  fingerprint is displayed rather than adopted silently.
+
+- **A changed certificate raises a repair, not a request for your password.** It
+  shows both the pinned and the served fingerprint and lets you accept the new
+  one; what gets pinned is only ever the value that was on screen, re-read and
+  compared at the moment you confirm. The repair is withdrawn on its own once the
+  gateway answers correctly again. A reissued certificate and an impersonated one
+  are indistinguishable from here, so neither is assumed.
+
+- **`unifi-gateway fingerprint`** prints the certificate's SHA-256, so the value
+  you are told to compare can be obtained without a browser. For the CLI and MCP
+  server, `UNIFI_GW_CERT_FINGERPRINT` pins one certificate and
+  `UNIFI_GW_VERIFY_SSL` verifies against the CA store; with neither set these
+  developer tools stay **unverified**, as before. `UNIFI_GW_PORT` overrides 443.
+
 ### Changed
+
+- **Existing configurations keep working, unchanged.** An entry created before
+  this release still verifies nothing, deliberately: pinning whatever the gateway
+  happened to serve during an upgrade would record a certificate nobody looked
+  at. A repair notification offers the one-time step, with the fingerprint shown;
+  it can be dismissed.
+
+- **The type-check gate reads its own configuration.** CI ran `mypy --strict
+  src/aiounifigw`, and an explicit path overrides the `files =` list in
+  `pyproject.toml` — so widening the configured scope changed nothing about what
+  was actually checked. The path argument is gone and `scripts/` is now in that
+  list: measured on a deliberately broken script, the old command exits 0 and the
+  new one exits 1.
 
 - **The oldest supported Home Assistant is tested, not just claimed.** The
   integration suite now runs against two cores: the floor declared in `hacs.json`
