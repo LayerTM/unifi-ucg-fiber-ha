@@ -7,6 +7,12 @@ All notable changes to this project are documented here. The format is based on
 
 ### Fixed
 
+- **A control button pressed during a certificate mismatch now says so.** It
+  reported "could not reach the gateway", which sends the user to check cables
+  and credentials while the truth is that something answered and was refused —
+  and while a repair is already waiting with both fingerprints. The mismatch has
+  its own message pointing at that repair.
+
 - **Turning controls off now removes their buttons instead of leaving them
   behind.** The button platform already declined to create them, which is enough
   for an entry that never had controls — but a registry entry outlives the

@@ -132,6 +132,7 @@
     }
   },
   "exceptions": {
+    "action_cert_mismatch": { "message": "The gateway presented a different certificate than the one this entry pinned, so the action was not sent. Check the repair notification: it shows both fingerprints and lets you accept the new one." },
     "action_auth_failed": { "message": "The action failed to authenticate. Re-check your credentials." },
     "action_not_permitted": { "message": "This credential is not permitted to perform control actions. Use a write-capable account or API key." },
     "action_cannot_connect": { "message": "Could not reach the gateway to perform the action." },
