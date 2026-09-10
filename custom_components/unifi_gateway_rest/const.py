@@ -16,6 +16,12 @@ PLATFORMS: Final = [
     Platform.SENSOR,
 ]
 
+# The platforms that exist only while controls are switched on. Stated here so
+# the setup that creates them and the cleanup that removes them cannot disagree,
+# and so a future control entity on another platform is covered by adding it
+# here rather than by remembering to edit two places.
+CONTROL_PLATFORMS: Final = (Platform.BUTTON,)
+
 # config-entry keys (host/port/username/password/api_key/verify_ssl reuse HA consts)
 CONF_AUTH_METHOD: Final = "auth_method"
 AUTH_API_KEY: Final = "api_key"

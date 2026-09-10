@@ -19,6 +19,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.device_registry import DeviceEntry
@@ -39,6 +40,7 @@ from .aiounifigw.auth import AbstractAuth
 from .const import (
     CONF_ENABLE_CONTROLS,
     CONF_SITE,
+    CONTROL_PLATFORMS,
     DEFAULT_ENABLE_CONTROLS,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
@@ -130,6 +132,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: GatewayConfigEntry) -> b
             ssl=ssl,
         )
 
+    _async_prune_control_entities(hass, entry, keep=action_client is not None)
+
     entry.runtime_data = GatewayRuntimeData(coordinator, action_client)
     # Register the hub before the platforms load: a sub-device can only be linked
     # to it by device-registry id, which does not exist until the hub does.
@@ -166,6 +170,34 @@ async def async_remove_config_entry_device(
 async def _async_reload(hass: HomeAssistant, entry: GatewayConfigEntry) -> None:
     """Reload the entry when its options change."""
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+def _async_prune_control_entities(
+    hass: HomeAssistant, entry: GatewayConfigEntry, *, keep: bool
+) -> None:
+    """Remove the control entities of this entry when controls are switched off.
+
+    The button platform declines to create them, which is enough for an entry
+    that never had controls. It is not enough for one that did: the registry
+    entry survives the platform that stopped providing it, so the button stays
+    on the device page and in every dashboard that references it, permanently
+    unavailable and unpressable. Turning controls off should leave no trace of
+    them, which is what this does — and turning controls back on recreates the
+    entities with the same unique ids, so nothing is lost that the user would
+    notice.
+    """
+    # Measured rather than assumed: Home Assistant keeps a removed registry entry
+    # in its deleted-entities store and restores the entity id when the same
+    # unique id is registered again, so removing and recreating on every reload
+    # would not lose a user's rename. The guard is here because deleting what is
+    # about to be recreated is churn and registry noise, not because the data
+    # would be lost.
+    if keep:
+        return
+    registry = er.async_get(hass)
+    for existing in er.async_entries_for_config_entry(registry, entry.entry_id):
+        if existing.domain in CONTROL_PLATFORMS:
+            registry.async_remove(existing.entity_id)
 
 
 def _async_review_tls(hass: HomeAssistant, entry: GatewayConfigEntry) -> None:
