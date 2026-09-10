@@ -179,7 +179,7 @@ class UnifiGatewayConfigFlow(ConfigFlow, domain=DOMAIN):
             )
         except GwConnectionError:
             return self.async_show_form(
-                step_id="user",
+                step_id=self._connection_step_id(),
                 data_schema=_connection_schema(self._data),
                 errors={"base": "cannot_connect"},
             )
@@ -196,6 +196,17 @@ class UnifiGatewayConfigFlow(ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema({}),
             description_placeholders={"fingerprint": fingerprint, "previous": previous or ""},
         )
+
+    def _connection_step_id(self) -> str:
+        """The step whose form collects host / port / site / TLS in this flow.
+
+        Sending the user back to the connection form after a failed probe has to
+        name the step they are actually in. Naming "user" inside a reconfigure
+        put the first-time-setup title above a form that was editing an existing
+        entry, and any later step added to one flow and not the other would be
+        offered to both.
+        """
+        return "reconfigure" if self.source == SOURCE_RECONFIGURE else "user"
 
     def _previous_fingerprint(self) -> str | None:
         """The fingerprint already stored for this entry, when reconfiguring one."""
