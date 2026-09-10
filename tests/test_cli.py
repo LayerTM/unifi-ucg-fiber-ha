@@ -163,3 +163,37 @@ async def test_the_cli_fingerprint_reports_an_unreachable_console(
     assert result.exit_code == 1
     # Exit 1 must come from the unreachable console, not from a broken harness.
     assert "could not read the certificate" in result.output
+
+
+def test_a_failing_command_reports_on_stderr_not_stdout(monkeypatch: pytest.MonkeyPatch) -> None:
+    """README says `export VAR=$(unifi-gateway fingerprint)`.
+
+    That idiom captures stdout and always exits 0, so an error printed to stdout
+    would be exported as the fingerprint — and then pinned.
+    """
+    monkeypatch.setenv("UNIFI_GW_HOST", "127.0.0.1")
+    monkeypatch.setenv("UNIFI_GW_PORT", "9")
+    result = CliRunner().invoke(app, ["fingerprint"])
+    assert result.exit_code == 1
+    assert result.stdout.strip() == ""
+    assert "could not read the certificate" in result.stderr
+
+
+def test_an_unusable_pinned_fingerprint_is_named_not_traced(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A malformed UNIFI_GW_CERT_FINGERPRINT is a user's typo, not a crash."""
+    monkeypatch.setenv("UNIFI_GW_HOST", "127.0.0.1")
+    monkeypatch.setenv("UNIFI_GW_APIKEY", "k")
+    monkeypatch.setenv("UNIFI_GW_CERT_FINGERPRINT", "could not read the certificate")
+    result = CliRunner().invoke(app, ["status"])
+    assert result.exit_code == 1
+    assert "not a hex fingerprint" in result.stderr
+    assert "Traceback" not in result.stderr
+
+
+def test_a_missing_host_is_named_not_traced(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("UNIFI_GW_HOST", raising=False)
+    result = CliRunner().invoke(app, ["fingerprint"])
+    assert result.exit_code == 1
+    assert "set UNIFI_GW_HOST" in result.stderr

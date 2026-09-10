@@ -34,10 +34,24 @@ from .tls import async_probe_fingerprint
 
 app = typer.Typer(add_completion=False, help="Query a UniFi OS gateway (UCG/UDM/UXG) locally.")
 console = Console()
+# Failures go to stderr, so `VALUE=$(unifi-gateway fingerprint)` captures a
+# fingerprint or nothing — never an error message that would then be pinned.
+err_console = Console(stderr=True)
 
 
 def _run(coro: Any) -> Any:
-    return asyncio.run(coro)
+    """Run a command's work, reporting the two failures a user can act on.
+
+    Both arrive here rather than at each command: a gateway that cannot be
+    reached (``GwError``) and an environment that does not describe one
+    (``ValueError`` from the ``UNIFI_GW_*`` readers, including a malformed
+    ``UNIFI_GW_CERT_FINGERPRINT``). A traceback states neither.
+    """
+    try:
+        return asyncio.run(coro)
+    except (GwError, ValueError) as err:
+        err_console.print(f"[red]{err}[/]")
+        raise typer.Exit(1) from err
 
 
 @app.command()
@@ -112,14 +126,15 @@ def fingerprint() -> None:
     UNIFI_GW_CERT_FINGERPRINT for these tools, or by accepting it in the Home
     Assistant setup flow. Nothing is trusted by running this.
     """
-    try:
-        value = _run(async_probe_fingerprint(env_host(), env_port()))
-    except GwError as err:
-        console.print(f"[red]{err}[/]")
-        raise typer.Exit(1) from err
+
+    async def _go() -> str:
+        # Read inside the coroutine: an argument evaluated at the call site would
+        # raise past _run, which is where an unset UNIFI_GW_HOST is reported.
+        return await async_probe_fingerprint(env_host(), env_port())
+
     # Plain, unwrapped: this is a value to copy or capture in `$(...)`, and a
     # 95-character fingerprint is wider than many terminals.
-    typer.echo(value)
+    typer.echo(_run(_go()))
 
 
 def main() -> None:

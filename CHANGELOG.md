@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.2.0]
 
 ### Added
 
@@ -33,6 +33,13 @@ All notable changes to this project are documented here. The format is based on
   server, `UNIFI_GW_CERT_FINGERPRINT` pins one certificate and
   `UNIFI_GW_VERIFY_SSL` verifies against the CA store; with neither set these
   developer tools stay **unverified**, as before. `UNIFI_GW_PORT` overrides 443.
+
+- **Command-line failures are reported on stderr, and named rather than traced.**
+  The documented way to pin a fingerprint is
+  `export UNIFI_GW_CERT_FINGERPRINT=$(unifi-gateway fingerprint)`, and that idiom
+  captures stdout and always exits 0 — so an error printed to stdout would be
+  exported and then pinned. Unreachable gateways and unusable `UNIFI_GW_*` values
+  now print one line to stderr and exit 1, for every command.
 
 ### Changed
 

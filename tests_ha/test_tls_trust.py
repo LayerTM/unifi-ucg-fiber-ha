@@ -329,3 +329,30 @@ async def test_the_mismatch_repair_for_a_deleted_entry_aborts(hass: HomeAssistan
     result = await flow.async_step_init()
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "entry_not_found"
+
+
+async def test_reauth_does_not_call_a_swapped_certificate_bad_credentials(
+    hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: AsyncMock
+) -> None:
+    """The one flow that exists to ask for credentials must not blame them here.
+
+    Reauth is where a misfiled certificate error does the most damage: the user
+    is already being asked to retype a secret, so "invalid credentials" reads as
+    confirmation and the swapped certificate is never mentioned.
+    """
+    config_entry.add_to_hass(hass)
+    mock_client.async_prepare = AsyncMock(
+        side_effect=GwCertificateMismatch(PINNED_FINGERPRINT, SERVED)
+    )
+    with patch(
+        "custom_components.unifi_gateway_rest.config_flow.GatewayClient",
+        return_value=mock_client,
+    ):
+        result = await config_entry.start_reauth_flow(hass)
+        assert result["step_id"] == "reauth_confirm"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"api_key": "test-key"}
+        )
+
+    assert result["errors"] == {"base": "cert_mismatch"}
+    assert config_entry.data[CONF_CERT_FINGERPRINT] == PINNED_FINGERPRINT
