@@ -266,3 +266,76 @@ async def test_reconfigure_that_accepts_the_new_certificate_stores_it(
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reconfigure_successful"
     assert config_entry.data[CONF_CERT_FINGERPRINT] == SERVED
+
+
+async def test_an_unreachable_gateway_during_reconfigure_stays_in_reconfigure(
+    hass: HomeAssistant, mock_client: AsyncMock, config_entry: MockConfigEntry
+) -> None:
+    """The form must name the step the user is actually in.
+
+    Naming "user" here put the first-time-setup title above a form that was
+    editing an existing entry, and routed the resubmission through the other
+    flow's step — harmless today only because the two happen to be symmetric.
+    """
+    config_entry.add_to_hass(hass)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": SOURCE_RECONFIGURE, "entry_id": config_entry.entry_id},
+    )
+    with (
+        _patch_client(mock_client),
+        patch(_FLOW_PROBE, AsyncMock(side_effect=GwConnectionError("down"))),
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {**CONNECTION, CONF_TLS_MODE: TlsMode.FINGERPRINT, CONF_AUTH_METHOD: AUTH_API_KEY},
+        )
+
+    assert result["step_id"] == "reconfigure"
+    assert result["errors"] == {"base": "cannot_connect"}
+
+
+async def test_the_same_failure_in_a_new_setup_stays_in_user(
+    hass: HomeAssistant, mock_client: AsyncMock
+) -> None:
+    """The other half of the same rule, so the fix cannot be a constant swap."""
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    with (
+        _patch_client(mock_client),
+        patch(_FLOW_PROBE, AsyncMock(side_effect=GwConnectionError("down"))),
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {**CONNECTION, CONF_TLS_MODE: TlsMode.FINGERPRINT, CONF_AUTH_METHOD: AUTH_API_KEY},
+        )
+
+    assert result["step_id"] == "user"
+    assert result["errors"] == {"base": "cannot_connect"}
+
+
+async def test_the_recovered_reconfigure_can_still_be_submitted(
+    hass: HomeAssistant, mock_client: AsyncMock, config_entry: MockConfigEntry
+) -> None:
+    """A renamed step is only right if the form it shows still leads somewhere."""
+    config_entry.add_to_hass(hass)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": SOURCE_RECONFIGURE, "entry_id": config_entry.entry_id},
+    )
+    connection = {**CONNECTION, CONF_TLS_MODE: TlsMode.FINGERPRINT, CONF_AUTH_METHOD: AUTH_API_KEY}
+    with _patch_client(mock_client):
+        with patch(_FLOW_PROBE, AsyncMock(side_effect=GwConnectionError("down"))):
+            result = await hass.config_entries.flow.async_configure(result["flow_id"], connection)
+        assert result["step_id"] == "reconfigure"
+        with patch(_FLOW_PROBE, AsyncMock(return_value=SERVED)):
+            result = await hass.config_entries.flow.async_configure(result["flow_id"], connection)
+            assert result["step_id"] == "tls_fingerprint_changed"
+            result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+            assert result["step_id"] == "api_key"
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], {CONF_API_KEY: "test-key"}
+            )
+            await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reconfigure_successful"

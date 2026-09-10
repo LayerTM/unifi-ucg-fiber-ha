@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format is based on
 
 ### Fixed
 
+- **A reconfigure that cannot reach the gateway stays in reconfigure.** The form
+  it came back with was labelled as first-time setup, and the resubmission was
+  routed through the other flow's step — harmless only while the two happen to
+  be symmetric.
+
 - **A control button pressed during a certificate mismatch now says so.** It
   reported "could not reach the gateway", which sends the user to check cables
   and credentials while the truth is that something answered and was refused —
