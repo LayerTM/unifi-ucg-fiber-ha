@@ -32,6 +32,7 @@ from homeassistant.helpers.selector import (
     SelectSelectorMode,
 )
 
+from . import async_update_entry_and_reload
 from .aiounifigw import (
     ApiKeyAuth,
     GatewayClient,
@@ -255,9 +256,8 @@ class UnifiGatewayConfigFlow(ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(identity.mac)
                 if self.source == SOURCE_RECONFIGURE:
                     self._abort_if_unique_id_mismatch(reason="wrong_device")
-                    return self.async_update_reload_and_abort(
-                        self._get_reconfigure_entry(), data=data
-                    )
+                    async_update_entry_and_reload(self.hass, self._get_reconfigure_entry(), data)
+                    return self.async_abort(reason="reconfigure_successful")
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(title=_title(identity, data), data=data)
         return self.async_show_form(step_id=step_id, data_schema=schema, errors=errors)
@@ -289,7 +289,8 @@ class UnifiGatewayConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 await self.async_set_unique_id(identity.mac)
                 self._abort_if_unique_id_mismatch(reason="wrong_device")
-                return self.async_update_reload_and_abort(self._get_reauth_entry(), data=data)
+                async_update_entry_and_reload(self.hass, self._get_reauth_entry(), data)
+                return self.async_abort(reason="reauth_successful")
         return self.async_show_form(step_id="reauth_confirm", data_schema=schema, errors=errors)
 
     async def _probe(self, data: dict[str, Any], auth: AbstractAuth) -> SystemIdentity:

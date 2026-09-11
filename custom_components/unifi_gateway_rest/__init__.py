@@ -16,7 +16,7 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
     CONF_USERNAME,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
@@ -170,8 +170,33 @@ async def async_remove_config_entry_device(
 
 
 async def _async_reload(hass: HomeAssistant, entry: GatewayConfigEntry) -> None:
-    """Reload the entry when its options change."""
+    """Reload the entry when it changes.
+
+    This listener is the only reload of a loaded entry whose data or options
+    change. Anything that changes an entry outside the options flow goes through
+    `async_update_entry_and_reload`, which relies on it rather than adding one.
+    """
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+@callback
+def async_update_entry_and_reload(
+    hass: HomeAssistant, entry: ConfigEntry, data: Mapping[str, Any]
+) -> None:
+    """Store new data and reload the entry exactly once.
+
+    Home Assistant fires the update listener only when the entry actually
+    changed, and the listener exists only while the entry is loaded. So the
+    listener covers a changed, loaded entry, and this schedules the reload in the
+    two cases it cannot: data identical to what is stored (a re-authentication
+    with the same credentials must still bring a failed entry back), and an entry
+    that is not loaded (one that failed setup has no listener yet). Scheduling a
+    reload on top of the listener is what set every reconfigure up twice.
+    """
+    reloads_itself = bool(entry.update_listeners)
+    changed = hass.config_entries.async_update_entry(entry, data=data)
+    if not (changed and reloads_itself):
+        hass.config_entries.async_schedule_reload(entry.entry_id)
 
 
 def _async_prune_control_entities(
