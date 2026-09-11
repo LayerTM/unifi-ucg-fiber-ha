@@ -33,6 +33,7 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 
+from . import async_update_entry_and_reload
 from .aiounifigw import GwConnectionError, TlsMode, async_probe_fingerprint
 from .const import (
     CONF_CERT_FINGERPRINT,
@@ -64,15 +65,15 @@ class _PinCertificateFlow(RepairsFlow):
             return None
 
     async def _async_pin(self, entry: ConfigEntry, fingerprint: str) -> FlowResult:
-        self.hass.config_entries.async_update_entry(
+        async_update_entry_and_reload(
+            self.hass,
             entry,
-            data={
+            {
                 **entry.data,
                 CONF_TLS_MODE: TlsMode.FINGERPRINT,
                 CONF_CERT_FINGERPRINT: fingerprint,
             },
         )
-        await self.hass.config_entries.async_reload(entry.entry_id)
         return self.async_create_entry(data={})
 
     def _async_show(self, step_id: str, placeholders: dict[str, str]) -> FlowResult:

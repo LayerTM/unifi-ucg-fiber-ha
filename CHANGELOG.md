@@ -3,6 +3,21 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.3]
+
+### Fixed
+
+- **Reconfiguring, re-authenticating or accepting a certificate sets the entry
+  up once, not twice.** The integration reloads an entry from its update
+  listener whenever the entry changes, and these three paths also asked Home
+  Assistant for a reload of their own, so every such change ran setup twice —
+  visible as each startup log line appearing twice. Home Assistant reports this
+  combination as breaking in 2026.12, but the first reload removed the listener
+  before that check ran, so the warning never appeared. The listener is now the
+  only reload of a changed, loaded entry; a separate reload happens only where
+  the listener cannot fire — a re-authentication that confirms the credentials
+  already stored, or an entry that failed setup and is not loaded.
+
 ## [0.2.2]
 
 ### Removed
