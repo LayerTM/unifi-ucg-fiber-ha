@@ -8,6 +8,12 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      - id: hygiene-scan
+        name: hygiene scan (no traces of one machine)
+        entry: python scripts/hygiene_scan.py
+        language: system
+        pass_filenames: false
+        always_run: true
       - id: vendor-sync
         name: aiounifigw vendored copy in sync with src/
         entry: python scripts/vendor_aiounifigw.py
