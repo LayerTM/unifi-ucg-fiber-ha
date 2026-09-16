@@ -1,0 +1,9 @@
+name: hygiene
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  hygiene:
+    uses: LayerTM/ClaudeInHA/.github/workflows/hygiene-scan.yml@main

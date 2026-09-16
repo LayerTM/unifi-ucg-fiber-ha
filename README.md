@@ -23,6 +23,7 @@
 [![hacs](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/hacs.yml/badge.svg)](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/hacs.yml)
 [![lint](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/lint.yml/badge.svg)](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/lint.yml)
 [![secret-scan](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/secret-scan.yml)
+[![hygiene](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/hygiene.yml/badge.svg)](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/hygiene.yml)
 
 </div>
 
