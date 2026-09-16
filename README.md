@@ -23,6 +23,7 @@
 [![hacs](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/hacs.yml/badge.svg)](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/hacs.yml)
 [![lint](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/lint.yml/badge.svg)](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/lint.yml)
 [![secret-scan](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/secret-scan.yml)
+[![hygiene](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/hygiene.yml/badge.svg)](https://github.com/LayerTM/unifi-ucg-fiber-ha/actions/workflows/hygiene.yml)
 
 </div>
 
@@ -138,7 +139,9 @@ Nothing is written to or left on the gateway, so no device-side cleanup is neede
 - Credentials live only in the Home Assistant config entry; nothing is sent to
   third parties.
 - Diagnostics redact credentials, MAC and WAN IP, and a secret/PII scanner
-  (`scripts/secret_scan.py`) runs in pre-commit and CI.
+  (`scripts/secret_scan.py`) runs in pre-commit and CI, alongside a hygiene
+  check (`scripts/hygiene_scan.py`) that keeps machine-specific paths,
+  symlinks leaving the repository and authoring by-products out of the tree.
 
 ## Certificate trust
 

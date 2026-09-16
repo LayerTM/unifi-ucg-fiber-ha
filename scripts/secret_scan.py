@@ -90,7 +90,7 @@ SKIP_SUFFIX = {
 }
 # These files legitimately hold pattern literals / synthetic PII test vectors,
 # so they are excluded from scanning (both are small and code-reviewed).
-SKIP_FILES = {Path(__file__).name, "test_secret_scan.py"}
+SKIP_FILES = {Path(__file__).name, "test_secret_scan.py", "test_hygiene_scan.py"}
 
 
 def _git_tracked(root: Path) -> list[Path] | None:
