@@ -1,3 +1,13 @@
+# Quality checklist
+
+This is our own review of the integration against Home Assistant's [integration
+quality scale](https://developers.home-assistant.io/docs/core/integration-quality-scale/)
+rules — a checklist we keep ourselves, **not a tier awarded to us**. Home Assistant
+grades integrations that ship with core; a custom integration installed through HACS
+is not graded at all, so nothing here is a rating and the tier names below are only
+the names of the rule groups. Reviewed against the tree of 2026-09-19.
+
+```yaml
 rules:
   # Bronze
   action-setup:
@@ -77,8 +87,11 @@ rules:
   icon-translations: done
   reconfiguration-flow: done
   repair-issues:
-    status: exempt
-    comment: There are no known error states that a repair flow could resolve.
+    status: done
+    comment: >-
+      A changed or unverified gateway certificate raises a repair the user can
+      fix from the issue itself (accept the new fingerprint, or pin the current
+      certificate instead of accepting any).
   stale-devices: done
 
   # Platinum
@@ -91,3 +104,4 @@ rules:
       and the integration (Python 3.14). Home Assistant core's `.strict-typing`
       registry is a core-only mechanism and does not apply to a HACS custom
       component, which enforces the same standard in its own CI instead.
+```
