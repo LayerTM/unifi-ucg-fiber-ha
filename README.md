@@ -13,7 +13,6 @@
 
 [![release](https://img.shields.io/github/v/release/LayerTM/unifi-ucg-fiber-ha?sort=semver&color=41BDF5)](https://github.com/LayerTM/unifi-ucg-fiber-ha/releases)
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![quality scale: platinum (self-reported)](https://img.shields.io/badge/quality%20scale-platinum%20(self--reported)-8A2BE2)](custom_components/unifi_gateway_rest/quality_scale.yaml)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.3%2B-41BDF5?logo=home-assistant&logoColor=white)](https://www.home-assistant.io/)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 
@@ -50,7 +49,6 @@ read-only by default. Run the two side by side: the official one for network
 | SFP+ module presence & fault | ✅ | ❌ | ❌ |
 | VPN status | ✅ | ❌ | ❌ |
 | Read-only by default, agentless | ✅ | ✅ | partial |
-| Platinum quality scale, vendored (zero-dep) | ✅ | ✅ | ❌ |
 
 ## How it works
 
