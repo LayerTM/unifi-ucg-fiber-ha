@@ -84,6 +84,14 @@ disallow_any_generics = true
 # library, and a public-API change can break one with no gate noticing.
 files = ["src/aiounifigw", "scripts"]
 
+[[tool.mypy.overrides]]
+# A Home Assistant platform package re-exports its public names (device classes,
+# entity descriptions) from its `const` module with `# noqa: F401`, and core's own
+# integrations import them from the package. Those imports are the public path,
+# not an accident of implementation, so they are treated as exports.
+module = "homeassistant.components.*"
+implicit_reexport = true
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 addopts = "-q --strict-markers"
