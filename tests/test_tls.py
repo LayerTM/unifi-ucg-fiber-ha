@@ -8,6 +8,7 @@ would only prove the mock was called; this proves the connection is refused.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 
 import aiohttp
@@ -77,6 +78,16 @@ async def test_probe_reads_the_served_certificate(tls_server: TlsServer) -> None
 async def test_probe_reports_an_unreachable_host() -> None:
     with pytest.raises(GwConnectionError):
         await async_probe_fingerprint("127.0.0.1", 1, timeout=2)
+
+
+async def test_probe_timeout_names_its_cause(monkeypatch: pytest.MonkeyPatch) -> None:
+    async def _hang(*_args: object, **_kwargs: object) -> None:
+        raise TimeoutError
+
+    monkeypatch.setattr(asyncio, "open_connection", _hang)
+    with pytest.raises(GwConnectionError) as exc:
+        await async_probe_fingerprint("127.0.0.1", 443)
+    assert str(exc.value) == "could not read the certificate of 127.0.0.1:443: TimeoutError"
 
 
 async def test_matching_fingerprint_connects(tls_server: TlsServer) -> None:

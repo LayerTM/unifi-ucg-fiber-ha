@@ -129,6 +129,15 @@ async def test_connection_error_mapped() -> None:
         await _transport(s, ApiKeyAuth("k")).get_json("/x")
 
 
+async def test_timeout_names_its_cause_and_the_request() -> None:
+    """``str(TimeoutError())`` is empty; the error must still say what failed."""
+    s = FakeSession()
+    s.add("GET", URL, exc=TimeoutError())
+    with pytest.raises(GwConnectionError) as exc:
+        await _transport(s, ApiKeyAuth("k")).get_json("/x")
+    assert str(exc.value) == "GET /x: TimeoutError"
+
+
 async def test_reauth_retry_succeeds() -> None:
     auth = StubAuth(reauth=True)
     s = FakeSession()
