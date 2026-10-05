@@ -3,6 +3,19 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+
+- **A connection failure always says what went wrong.** A request that timed
+  out was reported with an empty message — Home Assistant logged
+  `Error fetching unifi_gateway_rest data:` with nothing after the colon — so a
+  timeout could not be told apart from any other failure. A failure that
+  carries no text of its own is now named by its type, and a failed request
+  names the request: `GET /proxy/network/api/s/default/stat/device:
+  TimeoutError`. The same applies to reading the certificate and to the
+  session login.
+
 ## [0.2.3]
 
 ### Fixed

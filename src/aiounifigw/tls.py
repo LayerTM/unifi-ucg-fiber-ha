@@ -40,7 +40,7 @@ from typing import Final
 import aiohttp
 
 from .const import DEFAULT_PORT, DEFAULT_TIMEOUT
-from .exceptions import GwConnectionError
+from .exceptions import GwConnectionError, describe
 
 FINGERPRINT_BYTES: Final = 32  # SHA-256; aiohttp rejects md5/sha1 outright
 
@@ -158,7 +158,9 @@ async def async_probe_fingerprint(
                 raise GwConnectionError(f"{host}:{port} did not negotiate TLS")
             cert = sslobj.getpeercert(binary_form=True)
     except (OSError, ssl.SSLError, TimeoutError) as err:
-        raise GwConnectionError(f"could not read the certificate of {host}:{port}: {err}") from err
+        raise GwConnectionError(
+            f"could not read the certificate of {host}:{port}: {describe(err)}"
+        ) from err
     finally:
         if writer is not None:
             writer.close()

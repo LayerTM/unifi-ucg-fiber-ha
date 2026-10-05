@@ -8,6 +8,7 @@ from aiounifigw.exceptions import (
     GwCapabilityError,
     GwConnectionError,
     GwError,
+    describe,
 )
 
 
@@ -24,3 +25,11 @@ def test_api_error_status() -> None:
 
 def test_api_error_status_default_none() -> None:
     assert GwApiError("x").status is None
+
+
+def test_describe_keeps_a_message() -> None:
+    assert describe(OSError("Connection refused")) == "Connection refused"
+
+
+def test_describe_never_returns_empty() -> None:
+    assert describe(TimeoutError()) == "TimeoutError"

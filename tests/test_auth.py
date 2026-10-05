@@ -61,6 +61,15 @@ async def test_session_unreachable_console() -> None:
         await auth.async_prepare(s, BASE, ssl=False)  # type: ignore[arg-type]
 
 
+async def test_session_failure_without_a_message_names_its_type() -> None:
+    auth = SessionAuth("admin", "pw")
+    s = FakeSession()
+    s.add("GET", f"{BASE}/", exc=aiohttp.ClientError())
+    with pytest.raises(GwAuthError) as exc:
+        await auth.async_prepare(s, BASE, ssl=False)  # type: ignore[arg-type]
+    assert str(exc.value) == "could not reach console: ClientError"
+
+
 async def test_session_reauth_relogins() -> None:
     auth = SessionAuth("admin", "pw")
     s = FakeSession()

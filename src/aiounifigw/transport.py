@@ -28,6 +28,7 @@ from .exceptions import (
     GwAuthError,
     GwCapabilityError,
     GwConnectionError,
+    describe,
 )
 from .tls import mismatch_from
 
@@ -198,4 +199,4 @@ class GatewayTransport:
             # act on.
             raise mismatch_from(err) from err
         except (aiohttp.ClientError, TimeoutError) as err:
-            raise GwConnectionError(str(err)) from err
+            raise GwConnectionError(f"{method} {path}: {describe(err)}") from err
