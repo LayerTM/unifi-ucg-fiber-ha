@@ -112,10 +112,11 @@ async def test_refused_credentials_are_still_an_auth_error(status: int, message:
         await runner.cleanup()
 
 
-@pytest.mark.parametrize("status", [302, 429, 502, 503])
+@pytest.mark.parametrize("status", [302, 408, 429, 502, 503])
 async def test_a_login_answer_without_a_verdict_is_a_connection_error(status: int) -> None:
-    """A redirect to the UI, a rate limit, or the proxy answering for a console that
-    is still booting says nothing about the password, so it must not ask for one."""
+    """A redirect to the UI, a request timeout, a rate limit, or the proxy answering
+    for a console that is still booting says nothing about the password, so it must
+    not ask for one."""
     runner, port = await _serve(status)
     try:
         async with aiohttp.ClientSession() as session:

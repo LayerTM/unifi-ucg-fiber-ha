@@ -138,10 +138,11 @@ class SessionAuth(AbstractAuth):
             allow_redirects=False,
         ) as resp:
             status = resp.status
-            if 300 <= status < 400 or status == 429 or status >= 500:
-                # No verdict on the credentials: the console redirected, is
-                # rate-limiting, or its proxy answered for an application that
-                # is not up yet. Retry later rather than ask for a password.
+            if 300 <= status < 400 or status in (408, 429) or status >= 500:
+                # No verdict on the credentials: the console redirected, gave up
+                # waiting, is rate-limiting, or its proxy answered for an
+                # application that is not up yet. Retry later rather than ask
+                # for a password.
                 raise GwConnectionError(
                     f"login: console answered with status {status}, "
                     "not a verdict on the credentials"
