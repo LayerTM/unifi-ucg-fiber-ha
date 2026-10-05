@@ -16,13 +16,14 @@ All notable changes to this project are documented here. The format is based on
   TimeoutError`. The same applies to reading the certificate and to the
   session login.
 - **A console that cannot be reached during sign-in no longer asks for the
-  password again.** With a local-account login, a refused connection, a reset
-  or a proxy error while the console boots was reported as an authentication
-  failure, so Home Assistant started a re-authentication flow for credentials
+  password again.** With a local-account login, a refused connection, a reset,
+  a redirect to the console's web UI, a rate limit or a proxy error while the
+  console boots was reported as an authentication failure, so Home Assistant started a re-authentication flow for credentials
   that were never wrong; a sign-in that hung was not bounded by the request
   timeout at all. The sign-in now runs under the same timeout as every other
   request, any network failure during it leaves the entities unavailable and is
   retried, and only the console rejecting the credentials asks for them again.
+  A re-login after an expired session is bounded the same way.
   Setting up or reconfiguring the integration reports such a failure as
   "cannot connect" instead of "invalid authentication".
 

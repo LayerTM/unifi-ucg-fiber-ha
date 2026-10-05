@@ -25,7 +25,7 @@ from .const import (
     HEADER_CSRF_UPDATED,
     PATH_LOGIN,
 )
-from .exceptions import GwApiError, GwAuthError
+from .exceptions import GwAuthError, GwConnectionError
 
 
 class AbstractAuth(ABC):
@@ -129,14 +129,29 @@ class SessionAuth(AbstractAuth):
         }
         request_headers = {HEADER_CSRF: self._csrf} if self._csrf else {}
         async with session.post(
-            f"{base_url}{PATH_LOGIN}", json=payload, headers=request_headers, ssl=ssl
+            f"{base_url}{PATH_LOGIN}",
+            json=payload,
+            headers=request_headers,
+            ssl=ssl,
+            # A console that is booting redirects to its web UI; followed, that
+            # ends as a 200 page with no token and reads as a refused login.
+            allow_redirects=False,
         ) as resp:
-            if resp.status in (401, 403):
-                raise GwAuthError("invalid credentials")
-            if resp.status >= 400:
-                # A proxy answering 502 while the console boots, or a rate limit,
-                # is not a refusal of these credentials.
-                raise GwApiError(f"login failed with status {resp.status}", status=resp.status)
+            status = resp.status
+            if 300 <= status < 400 or status == 429 or status >= 500:
+                # No verdict on the credentials: the console redirected, is
+                # rate-limiting, or its proxy answered for an application that
+                # is not up yet. Retry later rather than ask for a password.
+                raise GwConnectionError(
+                    f"login: console answered with status {status}, "
+                    "not a verdict on the credentials"
+                )
+            if status >= 400:
+                raise GwAuthError(
+                    "invalid credentials"
+                    if status in (401, 403)
+                    else f"login refused with status {status}"
+                )
             self._capture(resp)
 
         if not self._token:

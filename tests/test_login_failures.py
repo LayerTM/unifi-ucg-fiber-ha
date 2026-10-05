@@ -15,7 +15,7 @@ import aiohttp
 import pytest
 from aiohttp import web
 
-from aiounifigw import GatewayClient, GwApiError, GwAuthError, GwConnectionError, SessionAuth
+from aiounifigw import GatewayClient, GwAuthError, GwConnectionError, SessionAuth
 
 
 def _closed_port() -> int:
@@ -48,17 +48,37 @@ async def silent_port() -> AsyncIterator[int]:
         await server.wait_closed()
 
 
-async def _serve(login_status: int) -> tuple[web.AppRunner, int]:
+async def _serve(
+    login_status: int, *, data_status: int = 200, hang_relogin: bool = False
+) -> tuple[web.AppRunner, int]:
+    """A console: ``/`` primes CSRF, the login answers *login_status*, ``/x`` *data_status*.
+
+    With *hang_relogin*, the first login succeeds and every later one never answers.
+    """
+    logins = 0
+
     async def root(_request: web.Request) -> web.Response:
         return web.Response(text="<html></html>", content_type="text/html")
 
     async def login(_request: web.Request) -> web.Response:
-        return web.json_response({}, status=login_status)
+        nonlocal logins
+        logins += 1
+        if hang_relogin and logins > 1:
+            await asyncio.Event().wait()
+        headers = {"Location": "/manage"} if 300 <= login_status < 400 else {}
+        if login_status == 200:
+            headers["Set-Cookie"] = "TOKEN=t; Path=/"
+        return web.json_response({}, status=login_status, headers=headers)
+
+    async def data(_request: web.Request) -> web.Response:
+        return web.json_response({}, status=data_status)
 
     app = web.Application()
     app.router.add_get("/", root)
     app.router.add_post("/api/auth/login", login)
-    runner = web.AppRunner(app)
+    app.router.add_get("/x", data)
+    # A handler left hanging must not hold the teardown for aiohttp's default minute.
+    runner = web.AppRunner(app, shutdown_timeout=0.1)
     await runner.setup()
     site = web.TCPSite(runner, "127.0.0.1", 0)
     await site.start()
@@ -81,24 +101,40 @@ async def test_login_that_never_answers_times_out_as_a_connection_error(silent_p
     assert str(caught.value) == "login: TimeoutError"
 
 
-async def test_refused_credentials_are_still_an_auth_error() -> None:
-    runner, port = await _serve(401)
+@pytest.mark.parametrize(("status", "message"), [(401, "invalid credentials"), (400, "400")])
+async def test_refused_credentials_are_still_an_auth_error(status: int, message: str) -> None:
+    runner, port = await _serve(status)
     try:
         async with aiohttp.ClientSession() as session:
-            with pytest.raises(GwAuthError, match="invalid credentials"):
+            with pytest.raises(GwAuthError, match=message):
                 await _client(session, port).async_prepare()
     finally:
         await runner.cleanup()
 
 
-async def test_a_proxy_error_on_login_is_not_an_auth_error() -> None:
-    """A 502 from the console's proxy while it boots says nothing about the password."""
-    runner, port = await _serve(502)
+@pytest.mark.parametrize("status", [302, 429, 502, 503])
+async def test_a_login_answer_without_a_verdict_is_a_connection_error(status: int) -> None:
+    """A redirect to the UI, a rate limit, or the proxy answering for a console that
+    is still booting says nothing about the password, so it must not ask for one."""
+    runner, port = await _serve(status)
     try:
         async with aiohttp.ClientSession() as session:
-            with pytest.raises(GwApiError) as caught:
+            with pytest.raises(GwConnectionError, match=f"status {status}") as caught:
                 await _client(session, port).async_prepare()
     finally:
         await runner.cleanup()
     assert not isinstance(caught.value, GwAuthError)
-    assert caught.value.status == 502
+
+
+async def test_a_relogin_that_never_answers_is_bounded() -> None:
+    """The re-login after a 401 runs under the same timeout as the first one."""
+    runner, port = await _serve(200, data_status=401, hang_relogin=True)
+    try:
+        async with aiohttp.ClientSession() as session, asyncio.timeout(5):
+            client = _client(session, port, timeout=1)
+            await client.async_prepare()
+            with pytest.raises(GwConnectionError) as caught:
+                await client._transport.get_json("/x")
+    finally:
+        await runner.cleanup()
+    assert str(caught.value) == "login: TimeoutError"

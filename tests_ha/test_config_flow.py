@@ -99,7 +99,7 @@ async def test_user_flow_password(hass: HomeAssistant, mock_client: AsyncMock) -
     "error",
     # A console that is down, and one whose proxy answers 502 while it boots:
     # neither says anything about the credentials just entered.
-    [GwConnectionError("down"), GwApiError("login failed with status 502", status=502)],
+    [GwConnectionError("down"), GwApiError("unexpected status 502 for /api/system", status=502)],
 )
 async def test_cannot_connect(
     hass: HomeAssistant, mock_client: AsyncMock, error: Exception
