@@ -35,6 +35,7 @@ from . import async_update_entry_and_reload
 from .aiounifigw import (
     ApiKeyAuth,
     GatewayClient,
+    GwApiError,
     GwAuthError,
     GwCapabilityError,
     GwCertificateMismatch,
@@ -245,7 +246,7 @@ class UnifiGatewayConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "cert_mismatch"
             except GwAuthError:
                 errors["base"] = "invalid_auth"
-            except GwConnectionError:
+            except (GwConnectionError, GwApiError):
                 errors["base"] = "cannot_connect"
             except GwCapabilityError:
                 errors["base"] = "insufficient_permissions"
@@ -281,7 +282,7 @@ class UnifiGatewayConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "cert_mismatch"
             except GwAuthError:
                 errors["base"] = "invalid_auth"
-            except GwConnectionError:
+            except (GwConnectionError, GwApiError):
                 errors["base"] = "cannot_connect"
             except Exception:
                 _LOGGER.exception("Unexpected error during UniFi Gateway reauth")

@@ -7,7 +7,8 @@ import pytest
 
 from _fake import FakeSession
 from aiounifigw.auth import ApiKeyAuth, SessionAuth
-from aiounifigw.exceptions import GwAuthError
+from aiounifigw.exceptions import GwAuthError, GwConnectionError
+from aiounifigw.transport import GatewayTransport
 
 BASE = "https://gw.local"
 
@@ -53,21 +54,22 @@ async def test_session_missing_token_raises() -> None:
         await auth.async_prepare(s, BASE, ssl=False)  # type: ignore[arg-type]
 
 
-async def test_session_unreachable_console() -> None:
+async def test_session_network_failure_is_not_an_auth_verdict() -> None:
+    """The strategy judges only the console's answer; the transport types the wire."""
     auth = SessionAuth("admin", "pw")
     s = FakeSession()
     s.add("GET", f"{BASE}/", exc=aiohttp.ClientError("down"))
-    with pytest.raises(GwAuthError):
+    with pytest.raises(aiohttp.ClientError):
         await auth.async_prepare(s, BASE, ssl=False)  # type: ignore[arg-type]
 
 
-async def test_session_failure_without_a_message_names_its_type() -> None:
-    auth = SessionAuth("admin", "pw")
+async def test_session_login_names_a_failure_without_a_message() -> None:
     s = FakeSession()
     s.add("GET", f"{BASE}/", exc=aiohttp.ClientError())
-    with pytest.raises(GwAuthError) as exc:
-        await auth.async_prepare(s, BASE, ssl=False)  # type: ignore[arg-type]
-    assert str(exc.value) == "could not reach console: ClientError"
+    transport = GatewayTransport(s, "gw.local", SessionAuth("admin", "pw"))  # type: ignore[arg-type]
+    with pytest.raises(GwConnectionError) as exc:
+        await transport.async_prepare()
+    assert str(exc.value) == "login: ClientError"
 
 
 async def test_session_reauth_relogins() -> None:
