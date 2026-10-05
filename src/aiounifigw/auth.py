@@ -25,8 +25,7 @@ from .const import (
     HEADER_CSRF_UPDATED,
     PATH_LOGIN,
 )
-from .exceptions import GwAuthError, describe
-from .tls import mismatch_from
+from .exceptions import GwApiError, GwAuthError
 
 
 class AbstractAuth(ABC):
@@ -112,14 +111,14 @@ class SessionAuth(AbstractAuth):
     async def _login(
         self, session: aiohttp.ClientSession, base_url: str, ssl: bool | aiohttp.Fingerprint
     ) -> None:
+        # Network failures — unreachable, reset, timed out, a swapped certificate —
+        # are deliberately not caught here. They say nothing about the credentials,
+        # and the transport that runs this handshake types them exactly as it types
+        # every other request's. Only the console's own answer is an auth verdict.
+
         # 1) prime CSRF from the console root
-        try:
-            async with session.get(f"{base_url}/", ssl=ssl) as resp:
-                self._capture(resp)
-        except aiohttp.ServerFingerprintMismatch as err:
-            raise mismatch_from(err) from err
-        except aiohttp.ClientError as err:
-            raise GwAuthError(f"could not reach console: {describe(err)}") from err
+        async with session.get(f"{base_url}/", ssl=ssl) as resp:
+            self._capture(resp)
 
         # 2) log in
         payload = {
@@ -129,22 +128,16 @@ class SessionAuth(AbstractAuth):
             "remember": True,
         }
         request_headers = {HEADER_CSRF: self._csrf} if self._csrf else {}
-        try:
-            async with session.post(
-                f"{base_url}{PATH_LOGIN}", json=payload, headers=request_headers, ssl=ssl
-            ) as resp:
-                if resp.status in (401, 403):
-                    raise GwAuthError("invalid credentials")
-                if resp.status >= 400:
-                    raise GwAuthError(f"login failed with status {resp.status}")
-                self._capture(resp)
-        except aiohttp.ServerFingerprintMismatch as err:
-            # A swapped certificate is not a bad password. Misfiling it as one
-            # makes Home Assistant tear the entry down and demand credentials
-            # that were always correct.
-            raise mismatch_from(err) from err
-        except aiohttp.ClientError as err:
-            raise GwAuthError(f"login request failed: {describe(err)}") from err
+        async with session.post(
+            f"{base_url}{PATH_LOGIN}", json=payload, headers=request_headers, ssl=ssl
+        ) as resp:
+            if resp.status in (401, 403):
+                raise GwAuthError("invalid credentials")
+            if resp.status >= 400:
+                # A proxy answering 502 while the console boots, or a rate limit,
+                # is not a refusal of these credentials.
+                raise GwApiError(f"login failed with status {resp.status}", status=resp.status)
+            self._capture(resp)
 
         if not self._token:
             raise GwAuthError("login did not return a session token")

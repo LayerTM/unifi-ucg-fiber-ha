@@ -5,7 +5,9 @@ from __future__ import annotations
 from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from custom_components.unifi_gateway_rest.aiounifigw import (
+    GwApiError,
     GwAuthError,
     GwCertificateMismatch,
     GwConnectionError,
@@ -93,8 +95,16 @@ async def test_user_flow_password(hass: HomeAssistant, mock_client: AsyncMock) -
     assert result["data"][CONF_USERNAME] == "admin"
 
 
-async def test_cannot_connect(hass: HomeAssistant, mock_client: AsyncMock) -> None:
-    mock_client.async_prepare = AsyncMock(side_effect=GwConnectionError("down"))
+@pytest.mark.parametrize(
+    "error",
+    # A console that is down, and one whose proxy answers 502 while it boots:
+    # neither says anything about the credentials just entered.
+    [GwConnectionError("down"), GwApiError("login failed with status 502", status=502)],
+)
+async def test_cannot_connect(
+    hass: HomeAssistant, mock_client: AsyncMock, error: Exception
+) -> None:
+    mock_client.async_prepare = AsyncMock(side_effect=error)
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
     with _patch_client(mock_client):
         result = await hass.config_entries.flow.async_configure(

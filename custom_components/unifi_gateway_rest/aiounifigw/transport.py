@@ -17,6 +17,8 @@ from __future__ import annotations
 
 import asyncio
 import json
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
 
 import aiohttp
@@ -73,7 +75,8 @@ class GatewayTransport:
     async def async_prepare(self) -> None:
         """Run the auth handshake once (idempotent)."""
         if not self._prepared:
-            await self._auth.async_prepare(self._session, self._base_url, ssl=self._ssl)
+            async with self._exchange("login"):
+                await self._auth.async_prepare(self._session, self._base_url, ssl=self._ssl)
             self._prepared = True
 
     async def get_json(self, path: str, *, allow_reauth: bool = True) -> Any:
@@ -113,7 +116,7 @@ class GatewayTransport:
             (status == 401 or data is _NON_JSON)
             and allow_reauth
             and self._auth.can_reauth
-            and await self._auth.async_reauth(self._session, self._base_url, ssl=self._ssl)
+            and await self._reauth()
         ):
             status, data = await self._request(
                 method, path, json_body=json_body, expect_json=expect_json
@@ -140,6 +143,31 @@ class GatewayTransport:
             )
         return data
 
+    async def _reauth(self) -> bool:
+        async with self._exchange("login"):
+            return await self._auth.async_reauth(self._session, self._base_url, ssl=self._ssl)
+
+    @asynccontextmanager
+    async def _exchange(self, what: str) -> AsyncIterator[None]:
+        """Bound one exchange with the console by the timeout and type its failures.
+
+        Every request and every login runs inside this, so the two questions it
+        answers are answered once: how long the console gets, and what a network
+        failure becomes. A failure on the wire is a :class:`GwConnectionError`
+        wherever it happens — never an authorization failure, which would make
+        Home Assistant ask for a password that was never wrong.
+        """
+        try:
+            async with asyncio.timeout(self._timeout):
+                yield
+        except aiohttp.ServerFingerprintMismatch as err:
+            # Must precede ClientError: this IS one, and collapsing it into a
+            # generic connection failure hides the one condition a user has to
+            # act on.
+            raise mismatch_from(err) from err
+        except (aiohttp.ClientError, TimeoutError) as err:
+            raise GwConnectionError(f"{what}: {describe(err)}") from err
+
     @staticmethod
     def _location(data: Any) -> str:
         """Redirect target captured by :meth:`_request`, for the error message."""
@@ -150,53 +178,45 @@ class GatewayTransport:
     ) -> tuple[int, Any]:
         url = f"{self._base_url}{path}"
         headers = {"Accept": "application/json", **self._auth.headers()}
-        try:
-            async with (
-                asyncio.timeout(self._timeout),
-                self._session.request(
-                    method,
-                    url,
-                    headers=headers,
-                    json=json_body,
-                    ssl=self._ssl,
-                    # aiohttp follows redirects by default. The UniFi OS proxy
-                    # answers API paths with a 302 to its web UI whenever the
-                    # Network application is not up, and following it turns that
-                    # into a 200 text/html that reads exactly like an expired
-                    # session. Keep the redirect visible so it can be classified.
-                    allow_redirects=False,
-                ) as resp,
-            ):
-                status = resp.status
-                if 300 <= status < 400:
-                    await resp.read()
-                    return status, resp.headers.get("Location")
-                if 200 <= status < 300:
-                    if expect_json:
-                        try:
-                            return status, await resp.json()
-                        except aiohttp.ContentTypeError:
-                            # The console served its SPA instead of JSON. DO NOT
-                            # chain the source exception: its request_info carries
-                            # the session cookie / API key.
-                            return status, _NON_JSON
-                    # writes: an empty 2xx body is a bodyless success and a JSON
-                    # body is returned as-is; any other non-empty 2xx body is the
-                    # SPA shell — never a false success (mirrors the read path's
-                    # no-silent-failure guarantee).
-                    raw = await resp.read()
-                    if not raw:
-                        return status, None
-                    try:
-                        return status, json.loads(raw)
-                    except (ValueError, UnicodeDecodeError):
-                        return status, _NON_JSON
+        async with (
+            self._exchange(f"{method} {path}"),
+            self._session.request(
+                method,
+                url,
+                headers=headers,
+                json=json_body,
+                ssl=self._ssl,
+                # aiohttp follows redirects by default. The UniFi OS proxy
+                # answers API paths with a 302 to its web UI whenever the
+                # Network application is not up, and following it turns that
+                # into a 200 text/html that reads exactly like an expired
+                # session. Keep the redirect visible so it can be classified.
+                allow_redirects=False,
+            ) as resp,
+        ):
+            status = resp.status
+            if 300 <= status < 400:
                 await resp.read()
-                return status, None
-        except aiohttp.ServerFingerprintMismatch as err:
-            # Must precede ClientError: this IS one, and collapsing it into a
-            # generic connection failure hides the one condition a user has to
-            # act on.
-            raise mismatch_from(err) from err
-        except (aiohttp.ClientError, TimeoutError) as err:
-            raise GwConnectionError(f"{method} {path}: {describe(err)}") from err
+                return status, resp.headers.get("Location")
+            if 200 <= status < 300:
+                if expect_json:
+                    try:
+                        return status, await resp.json()
+                    except aiohttp.ContentTypeError:
+                        # The console served its SPA instead of JSON. DO NOT
+                        # chain the source exception: its request_info carries
+                        # the session cookie / API key.
+                        return status, _NON_JSON
+                # writes: an empty 2xx body is a bodyless success and a JSON
+                # body is returned as-is; any other non-empty 2xx body is the
+                # SPA shell — never a false success (mirrors the read path's
+                # no-silent-failure guarantee).
+                raw = await resp.read()
+                if not raw:
+                    return status, None
+                try:
+                    return status, json.loads(raw)
+                except (ValueError, UnicodeDecodeError):
+                    return status, _NON_JSON
+            await resp.read()
+            return status, None

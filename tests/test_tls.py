@@ -161,10 +161,9 @@ async def test_session_login_does_not_call_a_swapped_certificate_bad_credentials
 ) -> None:
     """The expensive misfiling: a mismatch during login is not an auth failure.
 
-    ``SessionAuth._login`` wraps ``aiohttp.ClientError`` into ``GwAuthError``,
-    which Home Assistant treats as terminal — it would tear the entry down and
-    ask the user to retype a password that was never wrong, at exactly the moment
-    something may be impersonating their gateway.
+    A ``GwAuthError`` is terminal in Home Assistant — it would tear the entry
+    down and ask the user to retype a password that was never wrong, at exactly
+    the moment something may be impersonating their gateway.
     """
     from aiounifigw import GatewayClient, GwAuthError, SessionAuth
 
@@ -201,7 +200,7 @@ async def test_matching_pin_lets_the_client_through(tls_server: TlsServer) -> No
 
 
 async def test_a_certificate_swapped_between_the_two_login_requests() -> None:
-    """The second guard in ``_login``, which a single server cannot reach.
+    """The second login request, which a single server cannot reach.
 
     ``_login`` issues two requests: it primes CSRF from the console root, then
     posts the credentials. A mismatch normally stops the first one. This covers
@@ -210,6 +209,7 @@ async def test_a_certificate_swapped_between_the_two_login_requests() -> None:
     request that carries the password.
     """
     from aiounifigw.auth import SessionAuth
+    from aiounifigw.transport import GatewayTransport
 
     expected, got = hashlib.sha256(b"pinned").digest(), hashlib.sha256(b"impostor").digest()
 
@@ -241,10 +241,11 @@ async def test_a_certificate_swapped_between_the_two_login_requests() -> None:
             raise aiohttp.ServerFingerprintMismatch(expected, got, "127.0.0.1", 443)
 
     with pytest.raises(GwCertificateMismatch) as caught:
-        await SessionAuth("u", "p")._login(
+        await GatewayTransport(
             _SwappingSession(),  # type: ignore[arg-type]
-            "https://127.0.0.1",
-            ssl_param(TlsMode.FINGERPRINT, format_fingerprint(expected)),
-        )
+            "127.0.0.1",
+            SessionAuth("u", "p"),
+            ssl=ssl_param(TlsMode.FINGERPRINT, format_fingerprint(expected)),
+        ).async_prepare()
     assert caught.value.expected == format_fingerprint(expected)
     assert caught.value.got == format_fingerprint(got)

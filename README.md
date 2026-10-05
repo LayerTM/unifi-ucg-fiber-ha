@@ -215,10 +215,14 @@ unavailable.
 
 **Only a rejected credential asks you to re-authenticate.** A console that is
 booting, updating or restarting answers differently — a redirect to its web UI,
-or a page of HTML where JSON belongs — and that is treated as *unavailable*, so
-the poll simply retries and recovers on its own. A local-account session still
-gets one silent re-login first, since such a response can also be a genuine login
-page. Re-authentication is requested only for a 401 that survives that re-login.
+a page of HTML where JSON belongs, or a proxy error — and that is treated as
+*unavailable*, so the poll simply retries and recovers on its own. The same holds
+for a console that cannot be reached or does not answer in time, including while
+a local account is signing in: the sign-in is bounded by the same timeout as
+every other request. A local-account session still gets one silent re-login
+first, since such a response can also be a genuine login page.
+Re-authentication is requested only when the console itself rejects the
+credential.
 
 ## Known limitations
 
