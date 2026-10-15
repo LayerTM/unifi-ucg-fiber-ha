@@ -21,13 +21,16 @@ updates:
       github-actions:
         patterns: ["*"]
 
-  # The uv ecosystem owns both `pyproject.toml` and `uv.lock`. The pip
-  # ecosystem reads only the former and never refreshes the lock, which lets the
-  # lock fall behind while its pins keep being reported as vulnerable. The lock
-  # pins exactly what Home Assistant pins (the test harness requires one exact
-  # Home Assistant release), so a fix for one of those pins arrives with a newer
-  # Home Assistant in this grouped update rather than as a single-package one.
-  - package-ecosystem: uv
+  # `pyproject.toml` is PEP 621, which the pip ecosystem parses. Runtime and
+  # extra requirements are lower bounds, so expect updates here only when a
+  # release falls outside a declared range.
+  #
+  # There is deliberately no lock file. CI installs with pip against these
+  # ranges, so a lock would be consumed by nothing, and it could not be kept
+  # current either: the `ha` extra's test harness pins one exact Home Assistant
+  # release, which pins aiohttp, pytest, cryptography and others exactly, so
+  # every single-package update to a newer release has no solution.
+  - package-ecosystem: pip
     directory: "/"
     schedule:
       interval: weekly
