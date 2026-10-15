@@ -3,6 +3,18 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.5]
+
+### Fixed
+
+- **Sub-devices stay linked to the gateway on the next Home Assistant.** Whether
+  the running Home Assistant takes `via_device_id` was read from an attribute of
+  the typed dictionary that `DeviceInfo` is today. Home Assistant 2026.11 turns
+  `DeviceInfo` into a dataclass and keeps that attribute only in a compatibility
+  layer it plans to deprecate; once gone, the check would silently have said
+  "no" and sent the removed `via_device` key instead. It now asks the field
+  annotations, which both forms carry.
+
 ## [0.2.4]
 
 ### Fixed
