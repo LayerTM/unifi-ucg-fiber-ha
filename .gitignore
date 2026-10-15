@@ -26,6 +26,8 @@ coverage.xml
 htmlcov/
 dist/
 build/
+# No lock file is kept; see .github/dependabot.yml.
+uv.lock
 
 # ── Editor / OS ──
 .DS_Store
