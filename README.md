@@ -335,6 +335,26 @@ screen); `UNIFI_GW_VERIFY_SSL=1` verifies against the system CA store; a pinned
 fingerprint wins over both. Home Assistant does not use this path — it stores a
 pinned fingerprint per config entry. `UNIFI_GW_PORT` overrides the default 443.
 
+## Development
+
+Install the library with its extras — `pip install -e ".[dev,cli,mcp]"` for the
+client, CLI and MCP server, and `pip install -e ".[dev,ha]"` for the Home Assistant
+integration. Before opening a pull request, run what CI runs:
+
+- `ruff check .` and `ruff format --check .` for lint and formatting.
+- `mypy --strict` for the library, and `mypy --strict --python-version 3.14
+  custom_components/unifi_gateway_rest` for the integration.
+- `pytest --cov=aiounifigw --cov-report=term-missing --cov-fail-under=90` for the
+  library, and `PYTHONPATH=. pytest tests_ha/` for the integration.
+- `python scripts/vendor_aiounifigw.py`, then `git diff --exit-code
+  custom_components/unifi_gateway_rest/aiounifigw`, to confirm the vendored copy of
+  the client matches `src/`.
+- `python scripts/secret_scan.py .` and `python scripts/hygiene_scan.py .` to catch
+  secrets and local details before they are committed.
+
+A pull request description is written for users: what changes for them, why, and
+how they can check it on their own install.
+
 ## License
 
 [MIT](LICENSE) © LayerTM
