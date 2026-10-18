@@ -12,7 +12,7 @@
 <div align="center">
 
 [![release](https://img.shields.io/github/v/release/LayerTM/unifi-ucg-fiber-ha?sort=semver&color=41BDF5)](https://github.com/LayerTM/unifi-ucg-fiber-ha/releases)
-[![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/default)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.3%2B-41BDF5?logo=home-assistant&logoColor=white)](https://www.home-assistant.io/)
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
 
@@ -99,11 +99,10 @@ UI; re-authentication and reconfiguration are supported.
 
 ## Installation
 
-Via HACS (custom repository):
+This integration is in the HACS default list, so no custom repository is needed:
 
-1. HACS → ⋮ → **Custom repositories** → add
-   `https://github.com/LayerTM/unifi-ucg-fiber-ha` (category: **Integration**).
-2. Install **UniFi Gateway (non-invasive)**, then restart Home Assistant.
+1. **HACS → Integrations**, search for **UniFi Gateway (non-invasive)** and download it.
+2. Restart Home Assistant.
 3. **Settings → Devices & Services → Add Integration → UniFi Gateway**, then
    complete the flow:
    - **Host / Port / Site** of the gateway console, and whether to verify TLS
