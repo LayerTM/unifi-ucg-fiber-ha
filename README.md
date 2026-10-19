@@ -29,6 +29,15 @@
 
 ---
 
+## What you get
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/LayerTM/unifi-ucg-fiber-ha/main/assets/screenshots/device-page.png" alt="The UCG Fiber device page in Home Assistant: gateway sensors, and the WAN, WAN2 and SFP port sub-devices" width="520">
+</p>
+
+One device for the gateway, with its WAN links and SFP+ ports as linked
+sub-devices, each carrying its own sensors.
+
 ## Why this integration
 
 Home Assistant's official **UniFi Network** integration is excellent for what it
@@ -353,6 +362,12 @@ integration. Before opening a pull request, run what CI runs:
 
 A pull request description is written for users: what changes for them, why, and
 how they can check it on their own install.
+
+## See also
+
+[UniFi UNAS for Home Assistant](https://github.com/LayerTM/unifi-unas-ha) — the
+same non-invasive approach for UniFi UNAS network storage: disks, shared drives
+and health.
 
 ## License
 
