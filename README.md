@@ -32,7 +32,7 @@
 ## What you get
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/LayerTM/unifi-ucg-fiber-ha/main/assets/screenshots/device-page.png" alt="The UCG Fiber device page in Home Assistant: gateway sensors, and the WAN, WAN2 and SFP port sub-devices" width="520">
+  <img src="https://raw.githubusercontent.com/LayerTM/unifi-ucg-fiber-ha/main/assets/screenshots/device-page.gif" alt="The UCG Fiber device page in Home Assistant: gateway sensors, and the WAN, WAN2 and SFP port sub-devices" width="520">
 </p>
 
 One device for the gateway, with its WAN links and SFP+ ports as linked
