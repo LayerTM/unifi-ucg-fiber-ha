@@ -16,11 +16,17 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
+from pytest_socket import socket_allow_hosts
 
 from _fake import TlsServer
 from aiounifigw.tls import format_fingerprint
 
 FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def pytest_runtest_setup() -> None:
+    """Refuse any connection but loopback: see test_no_network.py for why."""
+    socket_allow_hosts(["127.0.0.1", "::1"], allow_unix_socket=True)
 
 
 def _load(name: str) -> Any:
