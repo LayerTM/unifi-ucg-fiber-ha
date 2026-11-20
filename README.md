@@ -108,11 +108,17 @@ UI; re-authentication and reconfiguration are supported.
 
 ## Installation
 
-This integration is in the HACS default list, so no custom repository is needed:
+This integration is in the default community catalog, so no custom repository is
+needed.
 
-1. **HACS → Integrations**, search for **UniFi Gateway (non-invasive)** and download it.
-2. Restart Home Assistant.
-3. **Settings → Devices & Services → Add Integration → UniFi Gateway**, then
+1. Install it:
+   - **Home Assistant 2026.11 and later:** **Settings → Marketplace**, search for
+     **UniFi Gateway (non-invasive)**, open it and select **Install**. A first
+     install loads without a restart; when Home Assistant needs one, a repair
+     asks for it.
+   - **Earlier releases:** **HACS**, search for **UniFi Gateway (non-invasive)**,
+     download it and restart Home Assistant.
+2. **Settings → Devices & Services → Add Integration → UniFi Gateway**, then
    complete the flow:
    - **Host / Port / Site** of the gateway console, and whether to verify TLS
      (off by default — UniFi OS ships a self-signed certificate).
@@ -124,15 +130,17 @@ administrator could still read VPN, Auto-Link and device secrets, so on older
 versions update the Network application before relying on such an account to
 limit what the stored credential can see. The `aiounifigw` client is bundled inside
 the integration and has no external dependencies (Home Assistant already ships
-`aiohttp` and `yarl`), so HACS installs everything.
+`aiohttp` and `yarl`), so the Marketplace or HACS installs everything.
 
 ## Removal
 
 1. **Settings → Devices & Services → UniFi Gateway**, open the ⋮ menu on the
    integration entry and choose **Delete**. This removes the config entry and all
    its devices and entities; the stored credential is discarded.
-2. Optional — remove the integration in **HACS → UniFi Gateway (non-invasive) →
-   Remove**, then restart Home Assistant.
+2. Optional — remove the integration itself, then restart Home Assistant:
+   - **Home Assistant 2026.11 and later:** **Settings → Marketplace**, open the ⋮
+     menu on **UniFi Gateway (non-invasive)** and choose **Uninstall**.
+   - **Earlier releases:** **HACS → UniFi Gateway (non-invasive) → Remove**.
 
 Nothing is written to or left on the gateway, so no device-side cleanup is needed.
 
