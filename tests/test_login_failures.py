@@ -17,13 +17,21 @@ from aiohttp import web
 
 from aiounifigw import GatewayClient, GwAuthError, GwConnectionError, SessionAuth
 
+# A port nothing can be serving. Every server these tests start binds port 0,
+# and the system hands those out from its ephemeral range, which starts far above
+# the reserved ports on every platform; so no test running in parallel can be
+# given this one. A port that was merely free a moment ago can be, and the server
+# that got it then answered the login.
+_REFUSING_PORT = 1
 
-def _closed_port() -> int:
-    """A local port that was free a moment ago, so a connection to it is refused."""
-    with socket.socket() as sock:
-        sock.bind(("127.0.0.1", 0))
-        port: int = sock.getsockname()[1]
-    return port
+
+def _refusing_port() -> int:
+    """The refusing port, after checking that it really refuses."""
+    try:
+        socket.create_connection(("127.0.0.1", _REFUSING_PORT), timeout=1).close()
+    except ConnectionRefusedError:
+        return _REFUSING_PORT
+    pytest.fail(f"127.0.0.1:{_REFUSING_PORT} does not refuse connections on this machine")
 
 
 def _client(session: aiohttp.ClientSession, port: int, *, timeout: int = 15) -> GatewayClient:
@@ -88,7 +96,7 @@ async def _serve(
 async def test_refused_connection_during_login_is_a_connection_error() -> None:
     async with aiohttp.ClientSession() as session:
         with pytest.raises(GwConnectionError) as caught:
-            await _client(session, _closed_port()).async_prepare()
+            await _client(session, _refusing_port()).async_prepare()
     assert str(caught.value).startswith("login: ")
 
 
