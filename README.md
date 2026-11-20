@@ -66,7 +66,8 @@ UniFi OS gateways run the UniFi Network application, whose classic REST API sits
 behind the console reverse proxy (`https://<host>/proxy/network/api/...`). The
 integration authenticates locally and polls three read endpoints —
 `/stat/device`, `/stat/health`, `/stat/sysinfo` — plus `/api/system` for device
-identity. Everything is served from one shared coordinator fetch. See
+identity. Where the Network application serves its v2 site dashboard, two of its
+widgets (WAN activity and threat detection) are read as well. Everything is served from one shared coordinator fetch. See
 [`docs/API.md`](docs/API.md) for the exact endpoints and fields.
 
 Two authentication methods are supported; pick one during setup:
@@ -95,10 +96,14 @@ sub-device per WAN uplink and per populated SFP+ port.
   test ran on (UniFi Network 10.6+, which can test any WAN, not only the active
   one), and (with controls enabled) a **Run speedtest** button.
 - **Threat detection (IPS)** — number of IDS/IPS rules loaded and when the rule
-  set was last updated.
+  set was last updated; where the site dashboard is available, threats detected
+  in the last hour and an **IPS rules missing** problem sensor (threat detection
+  is on, no rule-set update is in progress, and no rule is loaded).
 - **Per WAN uplink** *(WAN, WAN2, …)* — link up, active-uplink, IP address,
   latency, availability %, uptime, negotiated link speed, download / upload
-  throughput, and media.
+  throughput, and media; where the site dashboard is available, **packet loss**
+  and peak latency (disabled by default) over the last complete five-minute
+  interval the gateway measured.
 - **Per SFP+ port** *(only when a module is present)* — module present and a
   module-problem binary sensor (Rx-LOS / Tx-fault); vendor and part appear on the
   sub-device info.
@@ -231,9 +236,9 @@ Not supported: cloud-only access (UniFi Site Manager) — only local access is u
 The integration **polls** the local REST API (`local_polling`) on a fixed
 interval — **30 seconds** by default. Every entity is served from a single shared
 coordinator fetch, so the poll cost does not grow with the number of entities.
-Supplementary reads (`/stat/health`, `/stat/sysinfo`) degrade to *unknown* on a
-transient permission/API error without taking the core WAN/console sensors
-unavailable.
+Supplementary reads (`/stat/health`, `/stat/sysinfo`, the site dashboard) degrade to *unknown* when the
+console refuses them — a permission or API error, or a credential rejected by that
+endpoint alone — without taking the core WAN/console sensors unavailable.
 
 **Only a rejected credential asks you to re-authenticate.** A console that is
 booting, updating or restarting answers differently — a redirect to its web UI,
@@ -255,6 +260,11 @@ credential.
   uptime and firmware-update overlap the official `unifi` integration; those
   entities here are diagnostic and some are disabled by default, so this
   integration leads with the gap it fills.
+- **No update entities.** The gateway's firmware update is already an `update`
+  entity of the official `unifi` integration, which also installs it. For the
+  UniFi Network application the console reports only *that* an update is
+  available, not which version, so an `update` entity could not show what it
+  would update to; the update-available binary sensor covers it instead.
 - **API-key scope.** An API key limited to the Integration API only cannot reach
   the classic `/stat/*` telemetry — use a full-access key or a local account.
 

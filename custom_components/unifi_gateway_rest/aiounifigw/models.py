@@ -555,3 +555,104 @@ class SysInfo:
             timezone=_s(d.get("timezone")),
             update_available=_b(d.get("update_available")),
         )
+
+
+@dataclass(frozen=True, slots=True)
+class WanQuality:
+    """Link quality of one WAN over the most recent complete sampling interval.
+
+    The gateway samples every WAN in fixed intervals (five minutes) and reports
+    per interval the average packet loss and the min / average / max latency of
+    its monitors. The newest interval is still filling while it is reported, so
+    the last *complete* one is used; with a single interval it is used as is.
+    """
+
+    interval_start: datetime | None
+    packet_loss_pct: float | None
+    latency_avg_ms: float | None
+    latency_min_ms: float | None
+    latency_max_ms: float | None
+
+    @classmethod
+    def from_api(cls, d: dict[str, Any]) -> WanQuality:
+        return cls(
+            interval_start=_epoch_ms(d.get("timestamp")),
+            packet_loss_pct=_fo(d.get("avg_packet_loss_pct")),
+            latency_avg_ms=_fo(d.get("avg_latency_ms")),
+            latency_min_ms=_fo(d.get("min_latency_ms")),
+            latency_max_ms=_fo(d.get("max_latency_ms")),
+        )
+
+
+def _last_complete(history: list[dict[str, Any]], end_ms: int | None) -> dict[str, Any] | None:
+    """Pick the newest interval that had ended by *end_ms* (else the newest one)."""
+    rows = sorted(
+        (h for h in history if isinstance(h, dict) and _i(h.get("timestamp")) is not None),
+        key=lambda h: _i0(h.get("timestamp")),
+    )
+    if not rows:
+        return None
+    if len(rows) >= 2 and end_ms is not None:
+        width = _i0(rows[-1].get("timestamp")) - _i0(rows[-2].get("timestamp"))
+        if width > 0 and _i0(rows[-1].get("timestamp")) + width > end_ms:
+            return rows[-2]
+    return rows[-1]
+
+
+@dataclass(frozen=True, slots=True)
+class ThreatDetection:
+    """Threat-detection (IDS/IPS) state from the dashboard ``cybersecure`` widget.
+
+    ``threats`` counts the threats detected within the requested window
+    (:data:`DASHBOARD_WINDOW_S`); ``signatures`` is the number of rules loaded.
+    """
+
+    enabled: bool
+    activating: bool
+    signatures: int | None
+    threats: int | None
+
+    @property
+    def rules_missing(self) -> bool:
+        """Threat detection is on, not mid-update, yet no rule is loaded."""
+        return self.enabled and not self.activating and self.signatures == 0
+
+    @classmethod
+    def from_api(cls, d: dict[str, Any]) -> ThreatDetection:
+        return cls(
+            enabled=_b(d.get("ips_enabled")),
+            activating=_b(d.get("is_activating")),
+            signatures=_i(d.get("signatures")),
+            threats=_i(d.get("threats")),
+        )
+
+
+DASHBOARD_WINDOW_S = 3600
+"""The window the dashboard is read for: threat counts are totals over it."""
+
+
+@dataclass(frozen=True, slots=True)
+class Dashboard:
+    """The site dashboard (UniFi Network v2 ``aggregated-dashboard``)."""
+
+    wan_quality: dict[str, WanQuality]  # keyed by WAN id ("WAN", "WAN2", ...)
+    threat_detection: ThreatDetection | None
+
+    @classmethod
+    def from_api(cls, data: Any) -> Dashboard:
+        d = data if isinstance(data, dict) else {}
+        meta = d.get("dashboard_meta") or {}
+        end_ms = _i(meta.get("end_timestamp")) if isinstance(meta, dict) else None
+        activity = d.get("wan_activity") or {}
+        groups = activity.get("activity_by_network_group") if isinstance(activity, dict) else None
+        quality: dict[str, WanQuality] = {}
+        for wan_id, group in (groups or {}).items():
+            history = group.get("history") if isinstance(group, dict) else None
+            row = _last_complete(history if isinstance(history, list) else [], end_ms)
+            if isinstance(wan_id, str) and row is not None:
+                quality[wan_id] = WanQuality.from_api(row)
+        cyber = d.get("cybersecure")
+        return cls(
+            wan_quality=quality,
+            threat_detection=ThreatDetection.from_api(cyber) if isinstance(cyber, dict) else None,
+        )

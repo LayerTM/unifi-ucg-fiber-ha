@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 from .client import GatewayClient
-from .exceptions import GwCapabilityError
+from .exceptions import GwCapabilityError, GwConnectionError, GwError
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -16,6 +19,7 @@ class Capabilities:
     device: bool
     health: bool
     sysinfo: bool
+    dashboard: bool = False  # v2 site dashboard (UniFi Network with the v2 API)
 
 
 async def _reachable(call: Callable[[], Awaitable[object]]) -> bool:
@@ -30,10 +34,30 @@ async def _reachable(call: Callable[[], Awaitable[object]]) -> bool:
     return True
 
 
+async def _supported(call: Callable[[], Awaitable[object]]) -> bool:
+    """Reachability of an optional endpoint: it never decides whether setup succeeds.
+
+    Any answer from the console other than success — absent on this firmware
+    (404), a query it rejects (400), a credential not allowed this endpoint
+    (401/403), a server error — means the feature is not offered, and the core
+    telemetry loads without it. Only an unreachable console propagates, because
+    then the core endpoints cannot be read either.
+    """
+    try:
+        await call()
+    except GwConnectionError:
+        raise
+    except GwError as err:
+        _LOGGER.debug("optional endpoint not available, its entities are skipped: %s", err)
+        return False
+    return True
+
+
 async def probe(client: GatewayClient) -> Capabilities:
     """Determine endpoint reachability for the client's auth method."""
     return Capabilities(
         device=await _reachable(client.get_device),
         health=await _reachable(client.get_health),
         sysinfo=await _reachable(client.get_sysinfo),
+        dashboard=await _supported(client.get_dashboard),
     )

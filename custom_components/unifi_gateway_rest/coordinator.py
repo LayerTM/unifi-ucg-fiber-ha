@@ -15,6 +15,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .aiounifigw import (
     Capabilities,
+    Dashboard,
     Device,
     GatewayClient,
     GwApiError,
@@ -38,6 +39,7 @@ class GwData:
     device: Device
     health: Health | None
     sysinfo: SysInfo | None
+    dashboard: Dashboard | None = None
 
 
 class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
@@ -65,24 +67,29 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
         platforms load. Sub-devices point at it (see `entity.link_to_hub`)."""
 
     async def _optional[T](self, call: Callable[[], Awaitable[T]]) -> T | None:
-        """Run a supplementary fetch, degrading to None on a scope/API error.
+        """Run a supplementary fetch, degrading to None when the console refuses it.
 
-        A capability denial or API error on health/sysinfo degrades that field to
-        None rather than failing the whole update (the core device telemetry stays
-        available). Auth (401) and connection errors still propagate so re-auth /
-        retry fire.
+        Only the core device read decides re-authentication. A supplementary read
+        (health, sysinfo, dashboard) runs after that read has succeeded with the
+        same credential, so a 401 here means this one endpoint refuses it, not that
+        the credential is wrong: like a scope denial or an API error, the field
+        degrades to None and the core telemetry stays available. A connection
+        error still propagates, so the update is retried.
         """
         try:
             return await call()
-        except (GwCapabilityError, GwApiError):
+        except (GwCapabilityError, GwApiError, GwAuthError) as err:
+            _LOGGER.debug("supplementary read unavailable, its entities show unknown: %s", err)
             return None
 
     async def _async_update_data(self) -> GwData:
         try:
             device = await self.client.get_device()
-            health, sysinfo = await asyncio.gather(
-                self._optional(self.client.get_health) if self.capabilities.health else _none(),
-                self._optional(self.client.get_sysinfo) if self.capabilities.sysinfo else _none(),
+            caps = self.capabilities
+            health, sysinfo, dashboard = await asyncio.gather(
+                self._optional(self.client.get_health) if caps.health else _none(),
+                self._optional(self.client.get_sysinfo) if caps.sysinfo else _none(),
+                self._optional(self.client.get_dashboard) if caps.dashboard else _none(),
             )
         except GwAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
@@ -104,7 +111,7 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
         # that is no longer served.
         if self.config_entry is not None:
             clear_cert_mismatch(self.hass, self.config_entry)
-        return GwData(device=device, health=health, sysinfo=sysinfo)
+        return GwData(device=device, health=health, sysinfo=sysinfo, dashboard=dashboard)
 
 
 async def _none() -> None:

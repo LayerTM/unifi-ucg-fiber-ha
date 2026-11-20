@@ -14,6 +14,8 @@ from .exceptions import (
     GwError,
 )
 from .models import (
+    DASHBOARD_WINDOW_S,
+    Dashboard,
     Device,
     Health,
     IpsSignatures,
@@ -24,8 +26,10 @@ from .models import (
     SysInfo,
     SystemIdentity,
     Temperature,
+    ThreatDetection,
     Vpn,
     Wan,
+    WanQuality,
 )
 from .tls import (
     GwCertificateMismatch,
@@ -38,9 +42,11 @@ from .tls import (
 from .transport import GatewayTransport
 
 __all__ = [
+    "DASHBOARD_WINDOW_S",
     "AbstractAuth",
     "ApiKeyAuth",
     "Capabilities",
+    "Dashboard",
     "Device",
     "GatewayActionClient",
     "GatewayClient",
@@ -61,9 +67,11 @@ __all__ = [
     "SysInfo",
     "SystemIdentity",
     "Temperature",
+    "ThreatDetection",
     "TlsMode",
     "Vpn",
     "Wan",
+    "WanQuality",
     "async_probe_fingerprint",
     "format_fingerprint",
     "parse_fingerprint",

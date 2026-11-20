@@ -29,6 +29,14 @@ PATH_STAT_DEVICE: Final = "/proxy/network/api/s/{site}/stat/device"
 PATH_STAT_HEALTH: Final = "/proxy/network/api/s/{site}/stat/health"
 PATH_STAT_SYSINFO: Final = "/proxy/network/api/s/{site}/stat/sysinfo"
 
+# UniFi Network application v2 API: the site dashboard, read for the two widgets
+# that carry per-WAN link quality and threat-detection state. `{window}` is the
+# history window in seconds (see models.DASHBOARD_WINDOW_S).
+PATH_DASHBOARD: Final = (
+    "/proxy/network/v2/api/site/{site}/aggregated-dashboard"
+    "?historySeconds={window}&widgets=wan_activity,cybersecure"
+)
+
 # Write / action endpoint (devmgr command channel). Payloads follow the
 # well-established UniFi controller convention; they are NOT triggered during
 # read-only operation and require a write-capable auth (session, or a

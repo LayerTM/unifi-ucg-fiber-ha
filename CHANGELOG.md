@@ -7,6 +7,14 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **Packet loss per WAN.** Where the UniFi Network application serves its site
+  dashboard, every WAN gets a *Packet loss* sensor and a *Peak latency* sensor
+  (disabled by default) for the last complete five-minute interval the gateway
+  measured. Firmware without the dashboard simply does not get them.
+- **IPS rules missing and threats detected.** From the same dashboard: a problem
+  sensor that turns on when threat detection is enabled, no rule-set update is
+  in progress and no rule is loaded, and a sensor with the threats detected in
+  the last hour.
 - **Which WAN the last speedtest measured.** UniFi Network 10.6 and later can run
   a speedtest on any WAN, not only the active one. A new diagnostic sensor,
   *Speedtest WAN*, names the uplink the last result belongs to; it is unknown on
@@ -20,6 +28,15 @@ All notable changes to this project are documented here. The format is based on
   monitoring tools.
 
 ### Changed
+
+- **Only the device read asks for credentials.** When the gateway refuses the
+  credential on a supplementary read (health, controller info, dashboard) after
+  the device read accepted it, those entities show unknown instead of Home
+  Assistant asking to re-authenticate.
+- **No update entities, by design.** The gateway firmware update is an `update`
+  entity of the official `unifi` integration, which also installs it; for the
+  Network application the console reports only that an update exists, not its
+  version. The README says so under *Known limitations*.
 
 - **Installation and removal describe the Home Assistant Marketplace.** From
   Home Assistant 2026.11 the integration is installed and uninstalled under

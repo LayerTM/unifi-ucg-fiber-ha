@@ -12,13 +12,14 @@ from .const import (
     DEFAULT_SITE,
     DEFAULT_TIMEOUT,
     GATEWAY_TYPES,
+    PATH_DASHBOARD,
     PATH_STAT_DEVICE,
     PATH_STAT_HEALTH,
     PATH_STAT_SYSINFO,
     PATH_SYSTEM,
 )
 from .exceptions import GwApiError
-from .models import Device, Health, SysInfo, SystemIdentity
+from .models import DASHBOARD_WINDOW_S, Dashboard, Device, Health, SysInfo, SystemIdentity
 from .transport import GatewayTransport
 
 
@@ -108,6 +109,11 @@ class GatewayClient:
         payload = await self._transport.get_json(PATH_STAT_SYSINFO.format(site=self._site))
         data = payload.get("data") if isinstance(payload, dict) else payload
         return SysInfo.from_api(data)
+
+    async def get_dashboard(self) -> Dashboard:
+        """Per-WAN link quality and threat detection from the v2 site dashboard."""
+        path = PATH_DASHBOARD.format(site=self._site, window=DASHBOARD_WINDOW_S)
+        return Dashboard.from_api(await self._transport.get_json(path))
 
     async def close(self) -> None:
         """Release client resources.

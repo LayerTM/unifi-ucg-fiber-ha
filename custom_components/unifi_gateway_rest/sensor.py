@@ -21,11 +21,12 @@ from homeassistant.const import (
     UnitOfTime,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
 from . import GatewayConfigEntry
-from .aiounifigw import Wan
+from .aiounifigw import Wan, WanQuality
 from .coordinator import GatewayDataUpdateCoordinator, GwData
 from .entity import GatewayEntity, GatewayWanEntity, add_new_entities
 
@@ -44,6 +45,13 @@ class GatewayWanSensorDescription(SensorEntityDescription):
     """Per-WAN sensor bound to a Wan accessor."""
 
     value_fn: Callable[[Wan], StateType | datetime]
+
+
+@dataclass(frozen=True, kw_only=True)
+class GatewayWanQualitySensorDescription(SensorEntityDescription):
+    """Per-WAN sensor bound to the WAN's dashboard link-quality sample."""
+
+    value_fn: Callable[[WanQuality], StateType]
 
 
 SENSORS: tuple[GatewaySensorDescription, ...] = (
@@ -327,6 +335,41 @@ WAN_SENSORS: tuple[GatewayWanSensorDescription, ...] = (
 )
 
 
+# Read from the v2 site dashboard; created only when the firmware serves it.
+DASHBOARD_SENSORS: tuple[GatewaySensorDescription, ...] = (
+    GatewaySensorDescription(
+        key="ips_threats",
+        translation_key="ips_threats",
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda d: (
+            d.dashboard.threat_detection.threats
+            if d.dashboard and d.dashboard.threat_detection
+            else None
+        ),
+    ),
+)
+
+WAN_QUALITY_SENSORS: tuple[GatewayWanQualitySensorDescription, ...] = (
+    GatewayWanQualitySensorDescription(
+        key="packet_loss",
+        translation_key="wan_packet_loss",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda q: q.packet_loss_pct,
+    ),
+    GatewayWanQualitySensorDescription(
+        key="latency_max",
+        translation_key="wan_latency_max",
+        native_unit_of_measurement=UnitOfTime.MILLISECONDS,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
+        value_fn=lambda q: q.latency_max_ms,
+    ),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: GatewayConfigEntry,
@@ -334,14 +377,25 @@ async def async_setup_entry(
 ) -> None:
     """Set up UniFi Gateway sensors from a config entry."""
     coordinator = entry.runtime_data.coordinator
-    async_add_entities(GatewaySensor(coordinator, d) for d in SENSORS)
+    dashboard = coordinator.capabilities.dashboard
+    async_add_entities(
+        GatewaySensor(coordinator, d) for d in SENSORS + (DASHBOARD_SENSORS if dashboard else ())
+    )
+
+    def _wan_sensors(wan_id: str) -> list[Entity]:
+        entities: list[Entity] = [GatewayWanSensor(coordinator, wan_id, d) for d in WAN_SENSORS]
+        if dashboard:
+            entities += [
+                GatewayWanQualitySensor(coordinator, wan_id, d) for d in WAN_QUALITY_SENSORS
+            ]
+        return entities
 
     syncers = [
         add_new_entities(
             async_add_entities,
             set(),
             lambda: [w.id for w in coordinator.data.device.wans],
-            lambda wan_id: [GatewayWanSensor(coordinator, wan_id, d) for d in WAN_SENSORS],
+            _wan_sensors,
         ),
         add_new_entities(
             async_add_entities,
@@ -385,6 +439,27 @@ class GatewayWanSensor(GatewayWanEntity, SensorEntity):
     def native_value(self) -> StateType | datetime:
         wan = self.wan
         return self.entity_description.value_fn(wan) if wan is not None else None
+
+
+class GatewayWanQualitySensor(GatewayWanEntity, SensorEntity):
+    """Per-WAN link quality from the site dashboard."""
+
+    entity_description: GatewayWanQualitySensorDescription
+
+    def __init__(
+        self,
+        coordinator: GatewayDataUpdateCoordinator,
+        wan_id: str,
+        description: GatewayWanQualitySensorDescription,
+    ) -> None:
+        super().__init__(coordinator, wan_id, description.key)
+        self.entity_description = description
+
+    @property
+    def native_value(self) -> StateType:
+        dashboard = self.coordinator.data.dashboard
+        quality = dashboard.wan_quality.get(self._wan_id) if dashboard else None
+        return self.entity_description.value_fn(quality) if quality is not None else None
 
 
 class GatewayTemperatureSensor(GatewayEntity, SensorEntity):
