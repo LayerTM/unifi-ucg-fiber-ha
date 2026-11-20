@@ -41,8 +41,12 @@ dev = [
 # marker is what makes this extra resolvable across the whole `requires-python`
 # range. Without it a universal resolver (uv) correctly reports the project as
 # unsatisfiable; pip only ever noticed because it resolves for one interpreter.
+# Deliberately a floor and not a pin: the harness is Home Assistant's own,
+# released with each version and pinning it exactly, and the CI job that
+# installs this extra fails when it lands on anything but the newest Home
+# Assistant release, so a harness that stops following core is caught.
 ha = [
-  "pytest-homeassistant-custom-component>=0.13.300; python_full_version >= '3.14.2'",
+  "pytest-homeassistant>=2026.11.2; python_full_version >= '3.14.2'",
 ]
 
 [project.urls]
@@ -96,10 +100,21 @@ implicit_reexport = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-addopts = "-q --strict-markers"
+# `no:respx`: Home Assistant aliases `httpx` before anything imports it, and the
+# respx plugin, when pytest happens to load it first, imports `httpx` too early
+# and the harness refuses to start. Core disables the plugin the same way.
+addopts = "-q --strict-markers -p no:respx"
 testpaths = ["tests"]
 # Python's own deprecation channel, which no log watcher can see.
-filterwarnings = ["error::DeprecationWarning"]
+filterwarnings = [
+  "error::DeprecationWarning",
+  # Core's HTTP server subclasses aiohttp's `web.Application` on purpose and
+  # ignores this warning in its own test configuration with the same filter.
+  "ignore:Inheritance class HomeAssistantApplication from web.Application is discouraged:DeprecationWarning",
+  # Core's frontend imports `backoff`, archived at 2.2.1, which calls an asyncio
+  # function Python 3.14 deprecates; core carries the same filter.
+  "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16:DeprecationWarning:(backoff._decorator|backoff._async)",
+]
 
 [tool.coverage.run]
 branch = true

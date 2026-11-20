@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntries, ConfigEntry
 from homeassistant.const import (
     CONF_API_KEY,
     CONF_HOST,
@@ -58,6 +58,22 @@ from .tls import ssl_for_entry, tls_mode_of
 _LOGGER = logging.getLogger(__name__)
 
 
+# Home Assistant 2026.11 made `None` the result of a successful setup or unload,
+# and a failure is raised so that it carries its reason. A boolean is still
+# accepted from a custom integration without a word: core hands it to its usage
+# report, which so far only acts on core's own integrations. Older releases
+# accept only a boolean and fail a setup that returns anything else. Which
+# contract applies is asked of core rather than of a version number: the raising
+# unload arrived with it. That keeps the 2025.3 floor this integration supports,
+# with nothing to revisit when the boolean form goes.
+_RESULT_IS_NONE = hasattr(ConfigEntries, "async_unload_platforms_or_raise")
+
+
+def _succeeded() -> bool | None:
+    """Return what the running core takes as a successful entry method."""
+    return None if _RESULT_IS_NONE else True
+
+
 @dataclass
 class GatewayRuntimeData:
     """Per-entry runtime state."""
@@ -76,7 +92,7 @@ def build_auth(data: Mapping[str, Any]) -> AbstractAuth:
     return SessionAuth(data[CONF_USERNAME], data[CONF_PASSWORD])
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: GatewayConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: GatewayConfigEntry) -> bool | None:
     """Set up UniFi Gateway from a config entry."""
     data = entry.data
     port = data.get(CONF_PORT, DEFAULT_PORT)
@@ -145,12 +161,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: GatewayConfigEntry) -> b
     coordinator.hub_device_id = hub.id
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload))
-    return True
+    return _succeeded()
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: GatewayConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: GatewayConfigEntry) -> bool | None:
     """Unload a config entry."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if _RESULT_IS_NONE:
+        await hass.config_entries.async_unload_platforms_or_raise(entry, PLATFORMS)
+    elif not await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        return False
+    return _succeeded()
 
 
 async def async_remove_config_entry_device(

@@ -32,6 +32,36 @@ jobs:
         if: matrix.ha == 'latest'
         run: pip install -e ".[dev,ha]"
 
+      - name: Home Assistant is the newest release
+        if: matrix.ha == 'latest'
+        # The point of this cell is the Home Assistant users run, so it is checked
+        # rather than assumed: the harness under the `ha` extra floats, but a
+        # harness that stops following core (discontinued, renamed, held back by a
+        # dependency) still installs and still passes, on an old core. The newest
+        # release is read from PyPI. A release younger than the grace period is
+        # allowed to be missing, because the harness ships beside core and has
+        # trailed it by most of a day. The `ha` extra is empty below Python
+        # 3.14.2 (see `pyproject.toml`), so the interpreter is checked first.
+        run: |
+          python - <<'EOF'
+          import datetime, json, sys, urllib.request
+          GRACE = datetime.timedelta(days=3)
+          print("Python", sys.version.split()[0])
+          assert sys.version_info >= (3, 14, 2), "the ha extra needs Python 3.14.2+"
+          from homeassistant.const import __version__ as running
+          with urllib.request.urlopen("https://pypi.org/pypi/homeassistant/json", timeout=30) as r:
+              meta = json.load(r)
+          newest = meta["info"]["version"]
+          uploaded = meta["releases"][newest][0]["upload_time_iso_8601"]
+          age = datetime.datetime.now(datetime.UTC) - datetime.datetime.fromisoformat(
+              uploaded.replace("Z", "+00:00")
+          )
+          print(f"running against Home Assistant {running}; newest {newest}, released {uploaded}")
+          if running != newest and age > GRACE:
+              raise SystemExit(f"Home Assistant {newest} has been out for {age.days} days, "
+                               f"but the harness installed {running}")
+          EOF
+
       - name: Install library + oldest supported Home Assistant
         if: matrix.ha == 'minimum'
         # The floor is read from `hacs.json`, which is where it is declared to HACS
@@ -68,12 +98,12 @@ jobs:
 
       - name: Type check integration (Python 3.14, strict)
         if: matrix.ha == 'latest'
-        # Only against the newest core. The hub link is written with whichever
-        # `DeviceInfo` key the installed Home Assistant accepts, so exactly one of
-        # the two spellings type-checks at a time: on the floor `via_device_id` is
-        # an unknown key and the `via_device` ignore is unused, and on the newest
-        # core it is the other way round. Runtime behaviour is covered on both
-        # cells by the tests below.
+        # Only against the newest core, which the step above makes sure this is.
+        # The code is written for both cores and asks the installed one which
+        # contract it has (the `DeviceInfo` key for the hub link, the return value
+        # of a config entry method), but it is typed against the newest: on the
+        # floor `via_device_id` is an unknown key and `None` is not a valid return.
+        # Runtime behaviour on both is covered by the tests below.
         run: mypy --strict --python-version 3.14 custom_components/unifi_gateway_rest
 
       - name: Integration tests + coverage

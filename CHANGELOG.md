@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+
+- **Follows the Home Assistant 2026.11 contract for setting up and unloading.**
+  On Home Assistant 2026.11 and later, setup and unload signal success the new
+  way, and a failed unload is raised with its reason instead of returned as
+  false. Home Assistant still accepts the old form from custom integrations, so
+  nothing changes in use today; this follows the contract before that ends.
+  Releases down to 2025.3 keep the form they require.
+
 ## [0.2.5]
 
 ### Fixed

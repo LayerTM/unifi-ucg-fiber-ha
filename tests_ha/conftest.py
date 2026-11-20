@@ -32,7 +32,7 @@ from homeassistant.const import (
     CONF_VERIFY_SSL,
 )
 from homeassistant.helpers import frame
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures"
 

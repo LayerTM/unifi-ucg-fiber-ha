@@ -15,7 +15,7 @@ from custom_components.unifi_gateway_rest.diagnostics import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 CAPS = Capabilities(device=True, health=True, sysinfo=True)
 
