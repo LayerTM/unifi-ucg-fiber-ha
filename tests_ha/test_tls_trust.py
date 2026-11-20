@@ -33,9 +33,9 @@ from homeassistant.const import CONF_VERIFY_SSL
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from homeassistant.helpers import issue_registry as ir
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from conftest import PINNED_FINGERPRINT
+from tests_ha.conftest import PINNED_FINGERPRINT
 
 SERVED = "cd:" * 31 + "cd"
 SWAPPED = "ef:" * 31 + "ef"

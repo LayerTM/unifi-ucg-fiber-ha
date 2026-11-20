@@ -32,9 +32,9 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
-from conftest import PINNED_FINGERPRINT
+from tests_ha.conftest import PINNED_FINGERPRINT
 
 CONNECTION = {
     CONF_HOST: "192.0.2.10",
