@@ -264,9 +264,10 @@ class SfpPort:
 class IpsSignatures:
     """The IDS/IPS rule set loaded on the gateway (``ids_ips_signature``).
 
-    ``rule_count`` is the number of rules the threat-detection engine has applied;
-    a rule-set update that fails leaves it at zero while the console still looks
-    healthy, which is what makes the count worth watching.
+    ``rule_count`` is the number of rules the threat-detection engine has applied
+    and ``update_time`` (epoch milliseconds) when the rule set was last updated.
+    The payload does not say whether threat detection is switched on, so a count
+    of zero is reported as is rather than judged a fault.
     """
 
     rule_count: int | None

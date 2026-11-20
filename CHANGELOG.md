@@ -13,8 +13,7 @@ All notable changes to this project are documented here. The format is based on
   firmware that does not report it.
 - **Threat-detection rule set.** Two diagnostic sensors, *IPS rules* and *IPS
   signatures updated*, show how many IDS/IPS rules the gateway has loaded and
-  when the rule set was last updated. A rule-set update that fails leaves the
-  count at zero while the console still looks healthy.
+  when the rule set was last updated.
 - **Integration categories for the Home Assistant Marketplace.** The manifest
   declares `computers_network.routers_network` and
   `computers_network.monitoring`, so the integration is listed with gateways and

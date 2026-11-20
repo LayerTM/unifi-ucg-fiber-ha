@@ -95,8 +95,7 @@ sub-device per WAN uplink and per populated SFP+ port.
   test ran on (UniFi Network 10.6+, which can test any WAN, not only the active
   one), and (with controls enabled) a **Run speedtest** button.
 - **Threat detection (IPS)** — number of IDS/IPS rules loaded and when the rule
-  set was last updated. A failed rule-set update leaves the count at zero while
-  the console still looks healthy; the count shows it.
+  set was last updated.
 - **Per WAN uplink** *(WAN, WAN2, …)* — link up, active-uplink, IP address,
   latency, availability %, uptime, negotiated link speed, download / upload
   throughput, and media.
