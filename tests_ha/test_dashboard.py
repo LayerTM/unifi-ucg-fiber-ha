@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
-from custom_components.unifi_gateway_rest.aiounifigw import Capabilities, Dashboard
+from custom_components.unifi_gateway_rest.aiounifigw import Capabilities
 from custom_components.unifi_gateway_rest.const import DOMAIN
 from custom_components.unifi_gateway_rest.diagnostics import (
     async_get_config_entry_diagnostics,
@@ -16,25 +14,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
 
-_FIXTURE = (
-    Path(__file__).resolve().parents[1]
-    / "tests"
-    / "fixtures"
-    / "network_11"
-    / "aggregated_dashboard.json"
-)
 WITH_DASHBOARD = Capabilities(device=True, health=True, sysinfo=True, dashboard=True)
 WITHOUT_DASHBOARD = Capabilities(device=True, health=True, sysinfo=True)
-
-
-def _dashboard() -> Dashboard:
-    return Dashboard.from_api(json.loads(_FIXTURE.read_text(encoding="utf-8")))
 
 
 async def _setup(
     hass: HomeAssistant, entry: MockConfigEntry, client: AsyncMock, caps: Capabilities
 ) -> None:
-    client.get_dashboard = AsyncMock(return_value=_dashboard())
     entry.add_to_hass(hass)
     with patch.multiple(
         "custom_components.unifi_gateway_rest",

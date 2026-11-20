@@ -11,7 +11,9 @@ from unittest.mock import AsyncMock
 
 import pytest
 from custom_components.unifi_gateway_rest.aiounifigw import (
+    Dashboard,
     Device,
+    GatewayClient,
     Health,
     SysInfo,
     SystemIdentity,
@@ -128,18 +130,25 @@ def gateway_models() -> dict[str, Any]:
         "health": Health.from_api(_load("stat_health.json")["data"]),
         "sysinfo": SysInfo.from_api(_load("stat_sysinfo.json")["data"]),
         "identity": SystemIdentity.from_api(_load("api_system.json")),
+        "dashboard": Dashboard.from_api(_load("network_11/aggregated_dashboard.json")),
     }
 
 
 @pytest.fixture
 def mock_client(gateway_models: dict[str, Any]) -> AsyncMock:
-    """A GatewayClient mock returning canned models."""
-    client = AsyncMock()
+    """A GatewayClient mock returning canned models.
+
+    Specced to the real client, so a read the integration starts making is a
+    loud failure here until the mock is given a model for it, not a mock
+    object quietly flowing into entities.
+    """
+    client = AsyncMock(spec=GatewayClient)
     client.async_prepare = AsyncMock(return_value=None)
     client.get_identity = AsyncMock(return_value=gateway_models["identity"])
     client.get_device = AsyncMock(return_value=gateway_models["device"])
     client.get_health = AsyncMock(return_value=gateway_models["health"])
     client.get_sysinfo = AsyncMock(return_value=gateway_models["sysinfo"])
+    client.get_dashboard = AsyncMock(return_value=gateway_models["dashboard"])
     client.close = AsyncMock(return_value=None)
     return client
 
