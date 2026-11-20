@@ -119,7 +119,10 @@ This integration is in the HACS default list, so no custom repository is needed:
    - **Authentication** — an API key (recommended) or a local account.
 
 Use a least-privilege credential — an API key, or a dedicated limited local
-admin — rather than your owner account. The `aiounifigw` client is bundled inside
+admin — rather than your owner account. Before UniFi Network 11.0.94 a View Only
+administrator could still read VPN, Auto-Link and device secrets, so on older
+versions update the Network application before relying on such an account to
+limit what the stored credential can see. The `aiounifigw` client is bundled inside
 the integration and has no external dependencies (Home Assistant already ships
 `aiohttp` and `yarl`), so HACS installs everything.
 
@@ -205,8 +208,8 @@ network management.
 ## Supported devices
 
 Any UniFi OS console running the UniFi Network application and reachable on your
-LAN. Verified against a **UCG-Fiber** (`UDMA6A8`) on **UniFi OS 5.1.19 / Network
-10.5.62**; the UDM / UXG / UCG family is expected to work — telemetry a given
+LAN. Verified against a **UCG-Fiber** (`UDMA6A8`) on **UniFi OS 6.0.17 / Network
+11.0.102**; the UDM / UXG / UCG family is expected to work — telemetry a given
 model does not report is simply omitted (entities are capability-gated). Devices
 are identified by their MAC, so one Home Assistant can monitor several gateways.
 

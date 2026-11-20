@@ -3,9 +3,9 @@
     {
       "subsystem": "wlan",
       "status": "ok",
-      "num_user": 27,
+      "num_user": 20,
       "num_guest": 0,
-      "num_iot": 6,
+      "num_iot": 5,
       "num_ap": 4
     },
     {
@@ -25,14 +25,14 @@
       "speedtest_ping": 0,
       "xput_up": 0.0,
       "xput_down": 0.0,
-      "latency": 37,
+      "latency": 25,
       "drops": 1
     },
     {
       "subsystem": "lan",
       "status": "ok",
-      "num_user": 26,
-      "num_sw": 5
+      "num_user": 20,
+      "num_sw": 4
     },
     {
       "subsystem": "vpn",

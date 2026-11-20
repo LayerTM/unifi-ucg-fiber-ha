@@ -7,8 +7,8 @@ API** (`/proxy/network/integration/v1/...`) is intentionally *not* used as a dat
 source — it exposes only site/device summaries, not the WAN / speedtest /
 temperature / SFP payload this integration needs.
 
-Verified against a UCG-Fiber (`UDMA6A8`) on UniFi OS `5.1.19.33549`, UniFi
-Network `10.5.62`. `{site}` is the internal site name (usually `default`).
+Verified against a UCG-Fiber (`UDMA6A8`) on UniFi OS `6.0.17.36539`, UniFi
+Network `11.0.102`. `{site}` is the internal site name (usually `default`).
 
 ## Authentication
 

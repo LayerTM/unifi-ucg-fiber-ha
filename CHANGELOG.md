@@ -13,6 +13,10 @@ All notable changes to this project are documented here. The format is based on
   false. Home Assistant still accepts the old form from custom integrations, so
   nothing changes in use today; this follows the contract before that ends.
   Releases down to 2025.3 keep the form they require.
+- **Verified on UniFi OS 6.0.17 and UniFi Network 11.0.102.** Network 11 moved
+  to a new database and statistics engine and cleared the statistics history.
+  Every field the integration reads is still reported, with the same meaning,
+  so no change is needed when the gateway updates.
 
 ## [0.2.5]
 

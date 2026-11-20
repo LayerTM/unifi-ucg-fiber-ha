@@ -55,9 +55,9 @@ async def test_hub_and_subdevice_sensor_states(
         state = hass.states.get(entity_id)
         return state.state if state else None
 
-    assert state_of("cpu") == "20.9"
-    assert state_of("memory") == "74.8"
-    assert state_of("clients") == "51"
+    assert state_of("cpu") == "20.0"
+    assert state_of("memory") == "50.0"
+    assert state_of("clients") == "40"
     assert state_of("isp") == "Example ISP"
     assert state_of("active_wan") == "WAN"
     # per-WAN sub-device sensor
