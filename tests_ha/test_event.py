@@ -41,7 +41,7 @@ async def _setup(
 async def test_new_entries_fire_events_history_does_not(
     hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: AsyncMock
 ) -> None:
-    mock_client.get_system_log = AsyncMock(return_value=_page(2))  # existed before setup
+    mock_client.get_system_log_window = AsyncMock(return_value=_page(2))  # existed before setup
     await _setup(hass, config_entry, mock_client, WITH_LOG)
     entity_id = er.async_get(hass).async_get_entity_id(
         "event", DOMAIN, f"{config_entry.unique_id}_gateway_event"
@@ -57,7 +57,7 @@ async def test_new_entries_fire_events_history_does_not(
             fired.append(dict(event.data["new_state"].attributes))
 
     hass.bus.async_listen("state_changed", _record)
-    mock_client.get_system_log = AsyncMock(return_value=_page(0, 1, 2))
+    mock_client.get_system_log_window = AsyncMock(return_value=_page(0, 1, 2))
     await config_entry.runtime_data.coordinator.async_refresh()
     await hass.async_block_till_done()
 
@@ -84,4 +84,4 @@ async def test_no_event_entity_without_the_system_log(
         )
         is None
     )
-    mock_client.get_system_log.assert_not_called()
+    mock_client.get_system_log_window.assert_not_called()

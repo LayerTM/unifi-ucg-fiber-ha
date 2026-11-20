@@ -112,8 +112,9 @@ totals over the requested window.
 ## `POST /proxy/network/v2/api/site/{site}/system-log/all` — system log (read query)
 
 A search, not a change: the body is the query. Sent as
-`{"timestampFrom", "timestampTo" (epoch ms), "pageNumber": 0, "pageSize": 100,
-"categories": [...]}` with every category except `CLIENT_DEVICES`. The endpoint is
+`{"timestampFrom", "timestampTo" (epoch ms), "pageNumber", "pageSize": 100,
+"categories": [...]}` with every category except `CLIENT_DEVICES`, page by page
+(from `0`) while `total_element_count` exceeds the entries read, up to five pages. The endpoint is
 optional; when setup cannot read it, the event entity is not created.
 
 Returns `{ "data": [ <entry>, … ], "total_element_count", "page_number", "total_page_count" }`,

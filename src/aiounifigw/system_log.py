@@ -8,10 +8,13 @@ caller only asks it for the next window and hands back what the console said.
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
+
+_LOGGER = logging.getLogger(__name__)
 
 _PLACEHOLDER = re.compile(r"\{([A-Z0-9_]+)\}")
 
@@ -25,6 +28,9 @@ INITIAL_LOOKBACK_MS = 60 * 60 * 1000
 # How far past this host's clock a window reaches, for a console running ahead.
 LOOKAHEAD_MS = 60 * 60 * 1000
 PAGE_SIZE = 100
+# Pages read per window. A burst past this many entries keeps the newest and says
+# how many it skipped.
+MAX_PAGES = 5
 
 
 def _str(value: Any) -> str:
@@ -101,10 +107,28 @@ class SystemLog:
             total=total if isinstance(total, int) and not isinstance(total, bool) else len(entries),
         )
 
+    @classmethod
+    def merged(cls, pages: list[SystemLog]) -> SystemLog:
+        """One log from consecutive pages of the same search.
+
+        An entry written while the pages are read shifts the rest one place down,
+        so it can appear on two pages; it is kept once.
+        """
+        by_id = {e.id: e for page in pages for e in page.entries}
+        entries = sorted(by_id.values(), key=lambda e: -e.timestamp_ms)
+        total = max((page.total for page in pages), default=0)
+        return cls(entries=tuple(entries), total=max(total, len(entries)))
+
 
 @dataclass(slots=True)
 class SystemLogCursor:
-    """Yields every system-log entry once across overlapping polls."""
+    """Yields every system-log entry once across overlapping polls.
+
+    Every entry of the window is reported exactly once: already-seen entries are
+    dropped by id, and a window holding more entries than were read (a burst past
+    :data:`MAX_PAGES` pages) is reported with one warning naming how many were
+    skipped, never silently.
+    """
 
     _newest_ms: int | None = None
     _started: bool = False
@@ -137,4 +161,13 @@ class SystemLogCursor:
         if not self._started:
             self._started = True
             return ()
+        skipped = log.total - len(log.entries)
+        if skipped > 0:
+            _LOGGER.warning(
+                "%d older system-log entries in this window were not read "
+                "(more than %d in one poll); the newest %d are reported",
+                skipped,
+                MAX_PAGES * PAGE_SIZE,
+                len(log.entries),
+            )
         return tuple(sorted(fresh, key=lambda e: e.timestamp_ms))

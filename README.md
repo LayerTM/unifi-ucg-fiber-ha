@@ -276,9 +276,9 @@ credential.
   UniFi Network application the console reports only *that* an update is
   available, not which version, so an `update` entity could not show what it
   would update to; the update-available binary sensor covers it instead.
-- **Event bursts.** Each poll reports at most the newest 100 system-log entries
-  of the gateway categories; a larger burst between two polls reports its newest
-  100.
+- **Event bursts.** Each poll reads up to 500 system-log entries of the gateway
+  categories (five pages of 100). A larger burst between two polls reports its
+  newest 500 and logs a warning naming how many older entries were skipped.
 - **API-key scope.** An API key limited to the Integration API only cannot reach
   the classic `/stat/*` telemetry — use a full-access key or a local account.
 

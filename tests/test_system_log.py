@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +15,7 @@ from aiounifigw.const import SYSTEM_LOG_CATEGORIES
 from aiounifigw.system_log import (
     INITIAL_LOOKBACK_MS,
     LOOKAHEAD_MS,
+    MAX_PAGES,
     OVERLAP_MS,
     PAGE_SIZE,
     SystemLog,
@@ -130,3 +132,57 @@ async def test_the_client_sends_a_read_query() -> None:
         "categories": list(SYSTEM_LOG_CATEGORIES),
     }
     assert "CLIENT_DEVICES" not in kwargs["json"]["categories"]
+
+
+def _page_payload(ids: range, total: int) -> dict[str, Any]:
+    return {"data": [_row(f"e{i}", T + i) for i in reversed(ids)], "total_element_count": total}
+
+
+async def test_a_window_is_read_page_by_page_and_reported_once() -> None:
+    """250 entries over three pages: every one is reported once, oldest first."""
+    s = FakeSession()
+    for ids in (range(150, 250), range(50, 150), range(0, 50)):  # newest page first
+        s.add("POST", URL, payload=_page_payload(ids, 250))
+    client = GatewayClient(s, "gw.local", ApiKeyAuth("k"), ssl=False)  # type: ignore[arg-type]
+
+    cursor = SystemLogCursor()
+    cursor.advance(_log())  # started before the burst
+    log = await client.get_system_log_window(T, T + 1000)
+    assert [r[2]["json"]["pageNumber"] for r in s.requests] == [0, 1, 2]
+    fresh = cursor.advance(log)
+    assert [e.id for e in fresh] == [f"e{i}" for i in range(250)]
+    assert cursor.advance(log) == ()
+
+
+async def test_past_the_page_cap_the_newest_are_kept_with_one_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    s = FakeSession()
+    for page in range(MAX_PAGES):
+        top = 700 - page * PAGE_SIZE
+        s.add("POST", URL, payload=_page_payload(range(top - PAGE_SIZE, top), 700))
+    client = GatewayClient(s, "gw.local", ApiKeyAuth("k"), ssl=False)  # type: ignore[arg-type]
+
+    cursor = SystemLogCursor()
+    cursor.advance(_log())
+    log = await client.get_system_log_window(T, T + 1000)
+    assert len(s.requests) == MAX_PAGES
+    with caplog.at_level(logging.WARNING, logger="aiounifigw.system_log"):
+        fresh = cursor.advance(log)
+    assert [e.id for e in fresh] == [f"e{i}" for i in range(200, 700)]
+    warnings = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert len(warnings) == 1
+    assert warnings[0].getMessage().startswith("200 older system-log entries")
+
+
+async def test_a_short_window_reads_one_page() -> None:
+    s = FakeSession()
+    s.add("POST", URL, payload=_page_payload(range(3), 3))
+    client = GatewayClient(s, "gw.local", ApiKeyAuth("k"), ssl=False)  # type: ignore[arg-type]
+    assert len((await client.get_system_log_window(T, T + 1)).entries) == 3
+    assert len(s.requests) == 1
+
+
+def test_an_entry_on_two_pages_is_kept_once() -> None:
+    merged = SystemLog.merged([_log(_row("b", T + 1), _row("a", T)), _log(_row("a", T))])
+    assert [e.id for e in merged.entries] == ["b", "a"]

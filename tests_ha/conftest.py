@@ -151,6 +151,7 @@ def mock_client(gateway_models: dict[str, Any]) -> AsyncMock:
     client.get_sysinfo = AsyncMock(return_value=gateway_models["sysinfo"])
     client.get_dashboard = AsyncMock(return_value=gateway_models["dashboard"])
     client.get_system_log = AsyncMock(return_value=SystemLog(entries=(), total=0))
+    client.get_system_log_window = AsyncMock(return_value=SystemLog(entries=(), total=0))
     client.close = AsyncMock(return_value=None)
     return client
 

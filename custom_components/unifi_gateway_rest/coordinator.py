@@ -97,7 +97,7 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
                 self._optional(self.client.get_health) if caps.health else _none(),
                 self._optional(self.client.get_sysinfo) if caps.sysinfo else _none(),
                 self._optional(self.client.get_dashboard) if caps.dashboard else _none(),
-                self._optional(lambda: self.client.get_system_log(start_ms, end_ms))
+                self._optional(lambda: self.client.get_system_log_window(start_ms, end_ms))
                 if caps.system_log
                 else _none(),
             )
