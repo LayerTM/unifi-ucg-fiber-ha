@@ -29,6 +29,10 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- **Only the device read asks for credentials.** When the gateway refuses the
+  credential on a supplementary read (health, controller info, dashboard) after
+  the device read accepted it, those entities show unknown instead of Home
+  Assistant asking to re-authenticate.
 - **No update entities, by design.** The gateway firmware update is an `update`
   entity of the official `unifi` integration, which also installs it; for the
   Network application the console reports only that an update exists, not its

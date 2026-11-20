@@ -67,16 +67,19 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
         platforms load. Sub-devices point at it (see `entity.link_to_hub`)."""
 
     async def _optional[T](self, call: Callable[[], Awaitable[T]]) -> T | None:
-        """Run a supplementary fetch, degrading to None on a scope/API error.
+        """Run a supplementary fetch, degrading to None when the console refuses it.
 
-        A capability denial or API error on health/sysinfo/dashboard degrades that field to
-        None rather than failing the whole update (the core device telemetry stays
-        available). Auth (401) and connection errors still propagate so re-auth /
-        retry fire.
+        Only the core device read decides re-authentication. A supplementary read
+        (health, sysinfo, dashboard) runs after that read has succeeded with the
+        same credential, so a 401 here means this one endpoint refuses it, not that
+        the credential is wrong: like a scope denial or an API error, the field
+        degrades to None and the core telemetry stays available. A connection
+        error still propagates, so the update is retried.
         """
         try:
             return await call()
-        except (GwCapabilityError, GwApiError):
+        except (GwCapabilityError, GwApiError, GwAuthError) as err:
+            _LOGGER.debug("supplementary read unavailable, its entities show unknown: %s", err)
             return None
 
     async def _async_update_data(self) -> GwData:

@@ -236,9 +236,9 @@ Not supported: cloud-only access (UniFi Site Manager) — only local access is u
 The integration **polls** the local REST API (`local_polling`) on a fixed
 interval — **30 seconds** by default. Every entity is served from a single shared
 coordinator fetch, so the poll cost does not grow with the number of entities.
-Supplementary reads (`/stat/health`, `/stat/sysinfo`, the site dashboard) degrade to *unknown* on a
-transient permission/API error without taking the core WAN/console sensors
-unavailable.
+Supplementary reads (`/stat/health`, `/stat/sysinfo`, the site dashboard) degrade to *unknown* when the
+console refuses them — a permission or API error, or a credential rejected by that
+endpoint alone — without taking the core WAN/console sensors unavailable.
 
 **Only a rejected credential asks you to re-authenticate.** A console that is
 booting, updating or restarting answers differently — a redirect to its web UI,

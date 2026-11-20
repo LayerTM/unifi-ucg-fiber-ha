@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, patch
@@ -14,10 +15,12 @@ from custom_components.unifi_gateway_rest.aiounifigw import (
     Capabilities,
     GatewayClient,
     GwApiError,
+    GwAuthError,
 )
 from custom_components.unifi_gateway_rest.const import DOMAIN
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from multidict import CIMultiDict
 from pytest_homeassistant.common import MockConfigEntry
 
@@ -170,3 +173,39 @@ async def test_real_401_still_triggers_reauth(
         for flow in hass.config_entries.flow.async_progress()
         if flow["context"].get("source") == "reauth"
     ]
+
+
+async def test_a_refused_supplementary_read_never_asks_for_credentials(
+    hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: AsyncMock
+) -> None:
+    """The device read succeeded with this credential, so a 401 elsewhere is that endpoint's."""
+    caps = Capabilities(device=True, health=True, sysinfo=True, dashboard=True)
+    await _setup(hass, config_entry, mock_client, caps)
+    registry = er.async_get(hass)
+    uid = config_entry.unique_id
+
+    def state(key: str) -> str:
+        entity_id = registry.async_get_entity_id("sensor", DOMAIN, f"{uid}_{key}")
+        assert entity_id is not None, key
+        return hass.states.get(entity_id).state
+
+    assert state("wan_packet_loss") == "1.5"
+    device = mock_client.get_device.return_value
+    mock_client.get_device = AsyncMock(return_value=replace(device, cpu_percent=33.0))
+    mock_client.get_health = AsyncMock(side_effect=GwAuthError("unauthorized"))
+    mock_client.get_dashboard = AsyncMock(side_effect=GwAuthError("unauthorized"))
+
+    coordinator = config_entry.runtime_data.coordinator
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    assert coordinator.last_update_success is True
+    assert config_entry.state is ConfigEntryState.LOADED
+    assert not [
+        flow
+        for flow in hass.config_entries.flow.async_progress()
+        if flow["context"].get("source") == "reauth"
+    ]
+    assert state("cpu") == "33.0"
+    assert state("isp") == "unknown"
+    assert state("wan_packet_loss") == "unknown"
