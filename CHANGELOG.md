@@ -9,7 +9,8 @@ All notable changes to this project are documented here. The format is based on
 
 - **Console backup.** With a local account, a *Console auto-backup* binary sensor
   and a *Console backup frequency* sensor show the console's own automatic backup
-  (Settings → Control Plane → Backups), read every ten minutes. With an API key
+  (Settings → Control Plane → Backups), read every ten minutes and shown as
+  unavailable when it could not be read for 30 minutes. With an API key
   the console does not report it, and these entities are not created.
 - **Gateway events.** Where the UniFi Network application serves its system log,
   a *Gateway event* entity fires once for every new entry: internet and WAN,

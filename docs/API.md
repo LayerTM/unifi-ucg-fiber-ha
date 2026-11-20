@@ -53,7 +53,8 @@ Short payload (with an API key). Used for the config-entry `unique_id`.
 
 With a local-account session the console returns the full payload (about 60 KB),
 which carries the console's own backup schedule; with an API key it returns only
-the short identity above. The schedule is read every ten minutes.
+the short identity above. The schedule is read every ten minutes; when no read has
+succeeded for 30 minutes, it is reported as unknown.
 
 ## `GET /proxy/network/api/s/{site}/stat/device` — device telemetry
 

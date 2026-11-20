@@ -38,6 +38,9 @@ _LOGGER = logging.getLogger(__name__)
 # The console's backup schedule is a setting, and the full /api/system payload
 # that carries it is large: it is read every ten minutes, not every poll.
 BACKUP_REFRESH_S = 600
+# The schedule shown is at most this old: past it, after failed reads, the
+# schedule is reported as unknown (its entities unavailable) until a read succeeds.
+BACKUP_STALE_S = 3 * BACKUP_REFRESH_S
 
 
 @dataclass(slots=True)
@@ -136,16 +139,20 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
         if self.config_entry is not None:
             clear_cert_mismatch(self.hass, self.config_entry)
         new_entries = self._log_cursor.advance(log) if log is not None else ()
-        # A failed read keeps the last schedule; the next poll tries again.
+        # A failed read keeps the last schedule for a while; the next poll tries again.
         if backup_due and identity is not None:
             self._backup = identity.backup
             self._backup_read_at = time.monotonic()
+        backup_fresh = (
+            self._backup_read_at is not None
+            and time.monotonic() - self._backup_read_at <= BACKUP_STALE_S
+        )
         return GwData(
             device=device,
             health=health,
             sysinfo=sysinfo,
             dashboard=dashboard,
-            console_backup=self._backup,
+            console_backup=self._backup if backup_fresh else None,
             new_log_entries=new_entries,
         )
 

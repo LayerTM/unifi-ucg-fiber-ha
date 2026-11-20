@@ -25,6 +25,7 @@ PARALLEL_UPDATES = 0  # read-only; all data comes from the shared coordinator
 @dataclass(frozen=True, kw_only=True)
 class GatewayBinaryDescription(BinarySensorEntityDescription):
     value_fn: Callable[[GwData], bool | None]
+    available_fn: Callable[[GwData], bool] = lambda _: True
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -97,6 +98,7 @@ CONSOLE_BACKUP_BINARY_SENSORS: tuple[GatewayBinaryDescription, ...] = (
         translation_key="console_auto_backup",
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: d.console_backup.enabled if d.console_backup else None,
+        available_fn=lambda d: d.console_backup is not None,
     ),
 )
 
@@ -201,6 +203,10 @@ class GatewayBinarySensor(GatewayEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool | None:
         return self.entity_description.value_fn(self.coordinator.data)
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.entity_description.available_fn(self.coordinator.data)
 
 
 class GatewayWanBinarySensor(GatewayWanEntity, BinarySensorEntity):

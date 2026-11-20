@@ -111,7 +111,8 @@ sub-device per WAN uplink and per populated SFP+ port.
 - **VPN** — site-to-site enabled and active remote-user count.
 - **Console backup** *(local account only)* — whether the console's automatic
   backup is on and how often it runs (daily / weekly / monthly), as set under
-  Settings → Control Plane → Backups. Read every ten minutes.
+  Settings → Control Plane → Backups. Read every ten minutes; when it cannot be
+  read for 30 minutes, these entities show unavailable rather than an old value.
 - **Gateway event** *(where the system log is available)* — an `event` entity
   that fires once for every new entry of the gateway's system log: internet and
   WAN, security (threats, firewall blocks), admin activity, power, UniFi devices,

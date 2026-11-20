@@ -65,12 +65,28 @@ async def test_console_backup_entities(
     assert mock_client.get_identity.await_count == 1  # a setting: not re-read every poll
 
     clock[0] += 1
+    good = mock_client.get_identity
     mock_client.get_identity = AsyncMock(side_effect=coordinator_module.GwApiError("busy"))
     await coordinator.async_refresh()
     await hass.async_block_till_done()
-    # a failed read keeps the last schedule
+    # a failed read keeps the last schedule for a while
     assert _state(hass, config_entry, "sensor", "console_backup_frequency") == "weekly"
     assert mock_client.get_identity.await_count == 1
+
+    # still failing more than BACKUP_STALE_S after the last good read: unavailable, not stale
+    clock[0] = 1000.0 + coordinator_module.BACKUP_STALE_S + 1
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert _state(hass, config_entry, "sensor", "console_backup_frequency") == "unavailable"
+    assert _state(hass, config_entry, "binary_sensor", "console_auto_backup") == "unavailable"
+    assert _state(hass, config_entry, "sensor", "cpu") == "20.0"  # the rest is unaffected
+
+    # a read succeeds again: back
+    mock_client.get_identity = good
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+    assert _state(hass, config_entry, "sensor", "console_backup_frequency") == "weekly"
+    assert _state(hass, config_entry, "binary_sensor", "console_auto_backup") == "on"
 
 
 async def test_no_console_backup_entities_without_the_schedule(

@@ -38,6 +38,7 @@ class GatewaySensorDescription(SensorEntityDescription):
     """Aggregate/console sensor bound to a GwData accessor."""
 
     value_fn: Callable[[GwData], StateType | datetime]
+    available_fn: Callable[[GwData], bool] = lambda _: True
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -364,6 +365,7 @@ CONSOLE_BACKUP_SENSORS: tuple[GatewaySensorDescription, ...] = (
             if d.console_backup and d.console_backup.frequency in BACKUP_FREQUENCIES
             else None
         ),
+        available_fn=lambda d: d.console_backup is not None,
     ),
 )
 
@@ -442,6 +444,10 @@ class GatewaySensor(GatewayEntity, SensorEntity):
     @property
     def native_value(self) -> StateType | datetime:
         return self.entity_description.value_fn(self.coordinator.data)
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.entity_description.available_fn(self.coordinator.data)
 
 
 class GatewayWanSensor(GatewayWanEntity, SensorEntity):
