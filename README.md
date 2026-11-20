@@ -109,6 +109,9 @@ sub-device per WAN uplink and per populated SFP+ port.
   module-problem binary sensor (Rx-LOS / Tx-fault); vendor and part appear on the
   sub-device info.
 - **VPN** — site-to-site enabled and active remote-user count.
+- **Console backup** *(local account only)* — whether the console's automatic
+  backup is on and how often it runs (daily / weekly / monthly), as set under
+  Settings → Control Plane → Backups. Read every ten minutes.
 - **Gateway event** *(where the system log is available)* — an `event` entity
   that fires once for every new entry of the gateway's system log: internet and
   WAN, security (threats, firewall blocks), admin activity, power, UniFi devices,
@@ -279,6 +282,11 @@ credential.
 - **Event bursts.** Each poll reads up to 500 system-log entries of the gateway
   categories (five pages of 100). A larger burst between two polls reports its
   newest 500 and logs a warning naming how many older entries were skipped.
+- **Console backup needs a local account.** UniFi OS sends its backup schedule
+  only to a console administrator's session; an API key receives the short
+  console identity without it, so with an API key these entities are not
+  created. The Network application's own legacy auto-backup setting is not used:
+  UniFi OS 6 backs up the console as a whole and no longer follows it.
 - **API-key scope.** An API key limited to the Integration API only cannot reach
   the classic `/stat/*` telemetry — use a full-access key or a local account.
 

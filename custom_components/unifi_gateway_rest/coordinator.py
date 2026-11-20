@@ -16,6 +16,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .aiounifigw import (
     Capabilities,
+    ConsoleBackup,
     Dashboard,
     Device,
     GatewayClient,
@@ -34,6 +35,10 @@ from .issues import clear_cert_mismatch, raise_cert_mismatch
 
 _LOGGER = logging.getLogger(__name__)
 
+# The console's backup schedule is a setting, and the full /api/system payload
+# that carries it is large: it is read every ten minutes, not every poll.
+BACKUP_REFRESH_S = 600
+
 
 @dataclass(slots=True)
 class GwData:
@@ -43,6 +48,7 @@ class GwData:
     health: Health | None
     sysinfo: SysInfo | None
     dashboard: Dashboard | None = None
+    console_backup: ConsoleBackup | None = None
     new_log_entries: tuple[SystemLogEntry, ...] = ()
     """System-log entries first seen in this update, oldest first."""
 
@@ -68,6 +74,8 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
         self.client = client
         self.capabilities = capabilities
         self._log_cursor = SystemLogCursor()
+        self._backup: ConsoleBackup | None = None
+        self._backup_read_at: float | None = None
         self.hub_device_id: str | None = None
         """Device-registry id of the hub, set by `async_setup_entry` before the
         platforms load. Sub-devices point at it (see `entity.link_to_hub`)."""
@@ -76,9 +84,10 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
         """Run a supplementary fetch, degrading to None when the console refuses it.
 
         Only the core device read decides re-authentication. A supplementary read
-        (health, sysinfo, dashboard, system log) runs after that read has succeeded with the
-        same credential, so a 401 here means this one endpoint refuses it, not that
-        the credential is wrong: like a scope denial or an API error, the field
+        (health, sysinfo, dashboard, system log, console identity) runs after that
+        read has succeeded with the same credential, so a 401 here means this one
+        endpoint refuses it, not that the credential is wrong: like a scope denial
+        or an API error, the field
         degrades to None and the core telemetry stays available. A connection
         error still propagates, so the update is retried.
         """
@@ -93,13 +102,18 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
             device = await self.client.get_device()
             caps = self.capabilities
             start_ms, end_ms = self._log_cursor.window(int(time.time() * 1000))
-            health, sysinfo, dashboard, log = await asyncio.gather(
+            backup_due = caps.console_backup and (
+                self._backup_read_at is None
+                or time.monotonic() - self._backup_read_at >= BACKUP_REFRESH_S
+            )
+            health, sysinfo, dashboard, log, identity = await asyncio.gather(
                 self._optional(self.client.get_health) if caps.health else _none(),
                 self._optional(self.client.get_sysinfo) if caps.sysinfo else _none(),
                 self._optional(self.client.get_dashboard) if caps.dashboard else _none(),
                 self._optional(lambda: self.client.get_system_log_window(start_ms, end_ms))
                 if caps.system_log
                 else _none(),
+                self._optional(self.client.get_identity) if backup_due else _none(),
             )
         except GwAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
@@ -122,11 +136,16 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
         if self.config_entry is not None:
             clear_cert_mismatch(self.hass, self.config_entry)
         new_entries = self._log_cursor.advance(log) if log is not None else ()
+        # A failed read keeps the last schedule; the next poll tries again.
+        if backup_due and identity is not None:
+            self._backup = identity.backup
+            self._backup_read_at = time.monotonic()
         return GwData(
             device=device,
             health=health,
             sysinfo=sysinfo,
             dashboard=dashboard,
+            console_backup=self._backup,
             new_log_entries=new_entries,
         )
 

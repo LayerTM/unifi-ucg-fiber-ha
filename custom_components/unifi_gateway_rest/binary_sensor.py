@@ -90,6 +90,16 @@ DASHBOARD_BINARY_SENSORS: tuple[GatewayBinaryDescription, ...] = (
     ),
 )
 
+# The console's own backup schedule; created only when /api/system reports it.
+CONSOLE_BACKUP_BINARY_SENSORS: tuple[GatewayBinaryDescription, ...] = (
+    GatewayBinaryDescription(
+        key="console_auto_backup",
+        translation_key="console_auto_backup",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: d.console_backup.enabled if d.console_backup else None,
+    ),
+)
+
 WAN_BINARY_SENSORS: tuple[GatewayWanBinaryDescription, ...] = (
     GatewayWanBinaryDescription(
         key="up",
@@ -133,6 +143,8 @@ async def async_setup_entry(
     aggregate.extend(GatewayBinarySensor(coordinator, d) for d in BINARY_SENSORS)
     if coordinator.capabilities.dashboard:
         aggregate.extend(GatewayBinarySensor(coordinator, d) for d in DASHBOARD_BINARY_SENSORS)
+    if coordinator.capabilities.console_backup:
+        aggregate.extend(GatewayBinarySensor(coordinator, d) for d in CONSOLE_BACKUP_BINARY_SENSORS)
     async_add_entities(aggregate)
 
     syncers = [

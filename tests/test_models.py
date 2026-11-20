@@ -256,3 +256,30 @@ def test_speedtest_wan_resolves_by_interface(
     gw = {**_gateway(stat_device), "speedtest-status": {"interface_name": ifname}}
     wan = Device.from_api(gw).speedtest_wan
     assert (wan.id if wan else None) == wan_id
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected"),
+    [
+        ({"backupSchedule": "x"}, None),
+        ({"autoBackupEnabled": "yes", "backupSchedule": {}}, (False, "", None, ())),
+        (
+            {
+                "autoBackupEnabled": True,
+                "backupSchedule": {
+                    "frequency": "MONTHLY",
+                    "dayOfMonth": 28,
+                    "destinations": [1, "cloud"],
+                },
+            },
+            (True, "monthly", None, ("cloud",)),
+        ),
+    ],
+)
+def test_console_backup_edges(payload: dict[str, Any], expected: tuple[Any, ...] | None) -> None:
+    backup = SystemIdentity.from_api(payload).backup
+    if expected is None:
+        assert backup is None
+    else:
+        assert backup is not None
+        assert (backup.enabled, backup.frequency, backup.hour, backup.destinations) == expected

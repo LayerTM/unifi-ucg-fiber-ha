@@ -11,6 +11,7 @@ from _fake import FakeSession
 from aiounifigw import ApiKeyAuth, GatewayClient, GwConnectionError, probe
 
 BASE = "https://gw.local/proxy/network/api/s/default"
+SYSTEM = "https://gw.local/api/system"
 SYSTEM_LOG = "https://gw.local/proxy/network/v2/api/site/default/system-log/all"
 DASHBOARD = (
     "https://gw.local/proxy/network/v2/api/site/default/aggregated-dashboard"
@@ -31,8 +32,10 @@ async def test_probe_all_reachable(
     s.add("GET", f"{BASE}/stat/sysinfo", payload=stat_sysinfo)
     s.add("GET", DASHBOARD, payload={"wan_activity": {}, "cybersecure": {}})
     s.add("POST", SYSTEM_LOG, payload={"data": []})
+    s.add("GET", SYSTEM, payload={"mac": "aa:bb:cc:00:11:22", "backupSchedule": {}})
     caps = await probe(_client(s))
     assert caps.device and caps.health and caps.sysinfo and caps.dashboard and caps.system_log
+    assert caps.console_backup
 
 
 async def test_probe_marks_forbidden_endpoint(
@@ -44,12 +47,14 @@ async def test_probe_marks_forbidden_endpoint(
     s.add("GET", f"{BASE}/stat/sysinfo", payload=stat_sysinfo)
     s.add("GET", DASHBOARD, status=403)
     s.add("POST", SYSTEM_LOG, status=404)
+    s.add("GET", SYSTEM, payload={"mac": "aa:bb:cc:00:11:22"})  # an API key's short payload
     caps = await probe(_client(s))
     assert caps.device is True
     assert caps.health is False
     assert caps.sysinfo is True
     assert caps.dashboard is False
     assert caps.system_log is False
+    assert caps.console_backup is False
 
 
 async def _probe_with_dashboard_status(
@@ -64,8 +69,10 @@ async def _probe_with_dashboard_status(
     s.add("GET", f"{BASE}/stat/sysinfo", payload=stat_sysinfo)
     s.add("GET", DASHBOARD, status=status)
     s.add("POST", SYSTEM_LOG, status=status)
+    s.add("GET", SYSTEM, status=status)
     caps = await probe(_client(s))
     assert caps.system_log is caps.dashboard
+    assert caps.console_backup is caps.dashboard
     return caps.dashboard
 
 

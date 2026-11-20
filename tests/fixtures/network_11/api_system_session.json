@@ -1,0 +1,19 @@
+{
+  "mac": "aa:bb:cc:00:11:22",
+  "name": "UCG Fiber",
+  "hardware": {
+    "shortname": "UCGF"
+  },
+  "deviceState": "setup",
+  "hasInternet": true,
+  "autoBackupEnabled": true,
+  "backupSchedule": {
+    "frequency": "WEEKLY",
+    "dayOfWeek": 3,
+    "hour": 2,
+    "localRetention": 5,
+    "destinations": [
+      "local"
+    ]
+  }
+}

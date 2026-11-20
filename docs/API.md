@@ -48,6 +48,12 @@ Short payload (with an API key). Used for the config-entry `unique_id`.
 | `name` | friendly console name (e.g. `UCG Fiber`) |
 | `hardware.shortname` | model short name (e.g. `UCGF`) |
 | `hasInternet` | current internet reachability |
+| `autoBackupEnabled` *(session only)* | console auto-backup on / off |
+| `backupSchedule` = `{frequency (DAILY/WEEKLY/MONTHLY), dayOfWeek (0 = Sunday), dayOfMonth, hour, localRetention, destinations}` *(session only)* | console backup frequency |
+
+With a local-account session the console returns the full payload (about 60 KB),
+which carries the console's own backup schedule; with an API key it returns only
+the short identity above. The schedule is read every ten minutes.
 
 ## `GET /proxy/network/api/s/{site}/stat/device` — device telemetry
 

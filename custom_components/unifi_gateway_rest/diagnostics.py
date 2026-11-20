@@ -46,9 +46,11 @@ async def async_get_config_entry_diagnostics(
             "sysinfo": caps.sysinfo,
             "dashboard": caps.dashboard,
             "system_log": caps.system_log,
+            "console_backup": caps.console_backup,
         },
         "device": async_redact_data(_plain(data.device), DATA_REDACT),
         "health": async_redact_data(_plain(data.health), DATA_REDACT) if data.health else None,
         "sysinfo": _plain(data.sysinfo) if data.sysinfo else None,
         "dashboard": _plain(data.dashboard) if data.dashboard else None,
+        "console_backup": _plain(data.console_backup) if data.console_backup else None,
     }
