@@ -7,6 +7,13 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **Which WAN the last speedtest measured.** UniFi Network 10.6 and later can run
+  a speedtest on any WAN, not only the active one. A new diagnostic sensor,
+  *Speedtest WAN*, names the uplink the last result belongs to; it is unknown on
+  firmware that does not report it.
+- **Threat-detection rule set.** Two diagnostic sensors, *IPS rules* and *IPS
+  signatures updated*, show how many IDS/IPS rules the gateway has loaded and
+  when the rule set was last updated.
 - **Integration categories for the Home Assistant Marketplace.** The manifest
   declares `computers_network.routers_network` and
   `computers_network.monitoring`, so the integration is listed with gateways and

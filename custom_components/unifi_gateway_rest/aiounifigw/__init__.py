@@ -16,6 +16,7 @@ from .exceptions import (
 from .models import (
     Device,
     Health,
+    IpsSignatures,
     Isp,
     SfpPort,
     Speedtest,
@@ -51,6 +52,7 @@ __all__ = [
     "GwConnectionError",
     "GwError",
     "Health",
+    "IpsSignatures",
     "Isp",
     "SessionAuth",
     "SfpPort",

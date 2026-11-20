@@ -198,10 +198,30 @@ SENSORS: tuple[GatewaySensorDescription, ...] = (
         value_fn=lambda d: d.health.speedtest.last_run if d.health else None,
     ),
     GatewaySensorDescription(
+        key="speedtest_wan",
+        translation_key="speedtest_wan",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: d.device.speedtest_wan.id if d.device.speedtest_wan else None,
+    ),
+    GatewaySensorDescription(
         key="active_wan",
         translation_key="active_wan",
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda d: d.device.active_wan.id if d.device.active_wan else None,
+    ),
+    GatewaySensorDescription(
+        key="ips_rules",
+        translation_key="ips_rules",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: d.device.ips.rule_count if d.device.ips else None,
+    ),
+    GatewaySensorDescription(
+        key="ips_updated",
+        translation_key="ips_updated",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: d.device.ips.updated if d.device.ips else None,
     ),
     GatewaySensorDescription(
         key="vpn_remote_active",

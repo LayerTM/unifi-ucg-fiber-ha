@@ -98,3 +98,21 @@ def test_identity() -> None:
     identity = SystemIdentity.from_api(_load("api_system.json"))
     assert identity.model_shortname == "UCGF"
     assert identity.has_internet is True
+
+
+def test_ips_rule_set(device: Device) -> None:
+    """The threat-detection rule set: count and update time (sent in milliseconds)."""
+    assert device.ips is not None
+    assert device.ips.rule_count == 31000
+    assert device.ips.updated == datetime.fromtimestamp(1790000000, UTC)
+    assert device.ips.signature_type == "ET"
+    assert device.ips.activating is False
+
+
+def test_speedtest_names_the_wan_it_measured(device: Device) -> None:
+    """Since Network 10.6 a speedtest may run on a WAN that is not the active one."""
+    assert device.speedtest_ifname == "eth3"
+    assert device.speedtest_wan is not None
+    assert device.speedtest_wan.id == "WAN2"
+    assert device.active_wan is not None
+    assert device.active_wan.id == "WAN"
