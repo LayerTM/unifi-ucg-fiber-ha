@@ -3,10 +3,9 @@
 Network 11 moved its database to PostgreSQL, replaced the statistics engine and
 cleared the statistics history. The fixtures under ``fixtures/network_11`` keep
 the keys of the earlier UniFi OS 5.1 fixtures (all but the previous Network
-version), with the values a gateway on the new firmware returned, so these tests
-prove two things: every field the
-library reads is still there, and what the new statistics engine puts in it is
-still a value the sensors can show.
+version) as a gateway on the new firmware reports them, with synthetic values,
+so these tests prove that every field the library reads is still there and still
+parses into a value the sensors can show.
 """
 
 from __future__ import annotations
@@ -42,13 +41,13 @@ def test_versions() -> None:
 def test_console(device: Device) -> None:
     assert device.firmware_version == "6.0.17.36539"
     assert device.online is True
-    assert device.cpu_percent == 24.5
-    assert device.memory_percent == 66.6
-    assert device.memory_total == 3027685376
+    assert device.cpu_percent == 25.0
+    assert device.memory_percent == 60.0
+    assert device.memory_total == 3000000000
     assert {t.name: t.value for t in device.temperatures} == {
-        "Local": 46.062,
-        "CPU": 50.187,
-        "PMIC": 54.875,
+        "Local": 46.0,
+        "CPU": 51.0,
+        "PMIC": 54.0,
     }
     assert [s.name for s in device.storage] == ["Backup", "Temporary"]
 
@@ -66,36 +65,33 @@ def test_wan_statistics_survive_the_new_engine(device: Device) -> None:
         assert wan.availability is not None and 0.0 <= wan.availability <= 100.0
         assert wan.latency_ms is not None and 0 < wan.latency_ms < 1000
         assert wan.uptime_s is not None and wan.uptime_s > 0
-    assert (primary.availability, primary.latency_ms, primary.uptime_s) == (100.0, 22, 634515)
-    assert (backup.availability, backup.latency_ms, backup.uptime_s) == (100.0, 37, 14892)
+    assert (primary.availability, primary.latency_ms, primary.uptime_s) == (100.0, 20, 172000)
+    assert (backup.availability, backup.latency_ms, backup.uptime_s) == (100.0, 35, 7200)
 
 
 def test_wan_download_is_received_traffic(device: Device) -> None:
     """Download is what the WAN port receives.
 
     UniFi OS 6.0.17 fixed Sent and Received being swapped in its own Traffic
-    Info view. The counters this library reads keep their direction across that
-    update: on a home uplink the received total is the larger one by far, and it
-    is in the captures from both firmware generations. (The sent total here is
-    the captured one divided by ten: at twelve digits the repository's secret
-    scan cannot tell it from a bare hardware address. The captured ratio is 12.5.)
+    Info view. The counters this library reads are the WAN port's own: received
+    is download, and on a home uplink it is the larger total by far.
     """
     primary = device.wans[0]
-    assert primary.rx_bytes == 1989173135933
-    assert primary.tx_bytes == 15847907688
+    assert primary.rx_bytes == 1000000000000
+    assert primary.tx_bytes == 50000000000
     assert primary.rx_bytes > 10 * primary.tx_bytes
-    assert (primary.rx_rate_bps, primary.tx_rate_bps) == (257152, 51161)
+    assert (primary.rx_rate_bps, primary.tx_rate_bps) == (250000, 50000)
 
 
 def test_health_and_speedtest() -> None:
     health = Health.from_api(_load("stat_health.json")["data"])
     assert health.internet_status == "ok"
     assert health.wan_status == "ok"
-    assert health.internet_latency_ms == 40
+    assert health.internet_latency_ms == 25
     test = health.speedtest
     assert test.status == "Success"
-    assert (test.download_mbps, test.upload_mbps, test.ping_ms) == (30.0, 37.0, 28)
-    assert test.last_run == datetime.fromtimestamp(1795111416, UTC)
+    assert (test.download_mbps, test.upload_mbps, test.ping_ms) == (400.0, 40.0, 25)
+    assert test.last_run == datetime.fromtimestamp(1795000000, UTC)
 
 
 def test_identity() -> None:

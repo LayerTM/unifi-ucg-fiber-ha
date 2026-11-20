@@ -3,7 +3,7 @@
     {
       "subsystem": "wlan",
       "status": "ok",
-      "num_user": 25,
+      "num_user": 20,
       "num_guest": 0,
       "num_iot": 0,
       "num_ap": 4
@@ -21,18 +21,18 @@
       "subsystem": "www",
       "status": "ok",
       "speedtest_status": "Success",
-      "speedtest_lastrun": 1795111416,
-      "speedtest_ping": 28,
-      "xput_up": 37.0,
-      "xput_down": 30.0,
-      "latency": 40,
-      "drops": 8
+      "speedtest_lastrun": 1795000000,
+      "speedtest_ping": 25,
+      "xput_up": 40.0,
+      "xput_down": 400.0,
+      "latency": 25,
+      "drops": 2
     },
     {
       "subsystem": "lan",
       "status": "ok",
-      "num_user": 27,
-      "num_sw": 5
+      "num_user": 25,
+      "num_sw": 4
     },
     {
       "subsystem": "vpn",

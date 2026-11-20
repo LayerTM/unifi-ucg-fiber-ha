@@ -4,7 +4,7 @@
       "version": "11.0.102",
       "build": "atag_11.0.102_37262",
       "name": "UCG Fiber",
-      "timezone": "Europe/Warsaw",
+      "timezone": "UTC",
       "update_available": false,
       "console_display_version": "6.0.17"
     }

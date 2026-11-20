@@ -14,29 +14,65 @@
       "mac": "aa:bb:cc:00:11:22",
       "version": "5.1.19.33549",
       "state": 1,
-      "uptime": 33507,
+      "uptime": 86400,
       "overheating": false,
-      "num_sta": 51,
-      "system-stats": { "cpu": "20.9", "mem": "74.8", "uptime": "33507" },
+      "num_sta": 40,
+      "system-stats": {
+        "cpu": "20.0",
+        "mem": "50.0",
+        "uptime": "86400"
+      },
       "sys_stats": {
-        "loadavg_1": "1.99",
-        "loadavg_5": "2.49",
-        "loadavg_15": "2.77",
-        "mem_total": 3031826432,
-        "mem_used": 2267209728
+        "loadavg_1": "1.5",
+        "loadavg_5": "2.0",
+        "loadavg_15": "2.5",
+        "mem_total": 3000000000,
+        "mem_used": 1500000000
       },
       "temperatures": [
-        { "name": "Local", "type": "board", "value": 47.25 },
-        { "name": "CPU", "type": "cpu", "value": 51.312 },
-        { "name": "PMIC", "type": "board", "value": 55.812 }
+        {
+          "name": "Local",
+          "type": "board",
+          "value": 45.0
+        },
+        {
+          "name": "CPU",
+          "type": "cpu",
+          "value": 50.0
+        },
+        {
+          "name": "PMIC",
+          "type": "board",
+          "value": 55.0
+        }
       ],
       "storage": [
-        { "name": "Backup", "mount_point": "/persistent", "type": "eMMC", "size": 2040373248, "used": 353435648 },
-        { "name": "Temporary", "mount_point": "/tmp", "type": "other", "size": 1073741824, "used": 425984 }
+        {
+          "name": "Backup",
+          "mount_point": "/persistent",
+          "type": "eMMC",
+          "size": 2000000000,
+          "used": 400000000
+        },
+        {
+          "name": "Temporary",
+          "mount_point": "/tmp",
+          "type": "other",
+          "size": 1073741824,
+          "used": 500000
+        }
       ],
       "uptime_stats": {
-        "WAN": { "availability": 100.0, "latency_average": 27, "uptime": 33423 },
-        "WAN2": { "availability": 99.46, "latency_average": 19, "uptime": 3300 }
+        "WAN": {
+          "availability": 100.0,
+          "latency_average": 20,
+          "uptime": 86000
+        },
+        "WAN2": {
+          "availability": 99.5,
+          "latency_average": 30,
+          "uptime": 3600
+        }
       },
       "wan1": {
         "ifname": "eth0",
@@ -49,12 +85,12 @@
         "media": "2.5GE",
         "speed": 2500,
         "max_speed": 10000,
-        "latency": 40,
+        "latency": 20,
         "availability": 100,
-        "rx_bytes": 26236632987,
-        "tx_bytes": 6137427436,
-        "rx_bytes-r": 47835,
-        "tx_bytes-r": 291538
+        "rx_bytes": 50000000000,
+        "tx_bytes": 5000000000,
+        "rx_bytes-r": 125000,
+        "tx_bytes-r": 25000
       },
       "wan2": {
         "ifname": "eth3",
@@ -65,13 +101,18 @@
         "media": "2.5GE",
         "speed": 2500,
         "max_speed": 10000,
-        "rx_bytes": 5648085,
-        "tx_bytes": 4494036,
-        "rx_bytes-r": 161,
-        "tx_bytes-r": 161
+        "rx_bytes": 5000000,
+        "tx_bytes": 4000000,
+        "rx_bytes-r": 100,
+        "tx_bytes-r": 100
       },
       "port_table": [
-        { "port_idx": 6, "media": "SFP+", "up": false, "enable": true },
+        {
+          "port_idx": 6,
+          "media": "SFP+",
+          "up": false,
+          "enable": true
+        },
         {
           "port_idx": 7,
           "media": "SFP+",

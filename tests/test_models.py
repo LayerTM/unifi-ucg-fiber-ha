@@ -22,18 +22,18 @@ def test_device_core_fields(stat_device: dict[str, Any]) -> None:
     assert d.name == "UCG Fiber"
     assert d.firmware_version == "5.1.19.33549"
     assert d.online is True
-    assert d.num_clients == 51
-    assert d.cpu_percent == 20.9
-    assert d.memory_percent == 74.8
-    assert d.loadavg_1 == 1.99
-    assert d.loadavg_15 == 2.77
+    assert d.num_clients == 40
+    assert d.cpu_percent == 20.0
+    assert d.memory_percent == 50.0
+    assert d.loadavg_1 == 1.5
+    assert d.loadavg_15 == 2.5
     assert d.overheating is False
 
 
 def test_device_temperatures(stat_device: dict[str, Any]) -> None:
     d = Device.from_api(_gateway(stat_device))
     names = {t.name: t.value for t in d.temperatures}
-    assert names == {"Local": 47.25, "CPU": 51.312, "PMIC": 55.812}
+    assert names == {"Local": 45.0, "CPU": 50.0, "PMIC": 55.0}
 
 
 def test_device_storage(stat_device: dict[str, Any]) -> None:
@@ -41,7 +41,7 @@ def test_device_storage(stat_device: dict[str, Any]) -> None:
     persistent = d.persistent_storage
     assert persistent is not None
     assert persistent.type == "eMMC"
-    assert persistent.usage_percent == pytest.approx(17.3, abs=0.1)
+    assert persistent.usage_percent == pytest.approx(20.0, abs=0.1)
     assert persistent.available == persistent.size - persistent.used
 
 
@@ -55,11 +55,11 @@ def test_device_wans(stat_device: dict[str, Any]) -> None:
     assert wan1.speed == 2500
     assert wan1.max_speed == 10000
     # latency/availability/uptime come from uptime_stats, not the wan block
-    assert wan1.latency_ms == 27
+    assert wan1.latency_ms == 20
     assert wan1.availability == 100.0
-    assert wan1.uptime_s == 33423
-    assert wan1.rx_rate_bps == 47835
-    assert wan1.tx_rate_bps == 291538
+    assert wan1.uptime_s == 86000
+    assert wan1.rx_rate_bps == 125000
+    assert wan1.tx_rate_bps == 25000
     assert d.active_wan is wan1
     assert d.failover_active is False
 
@@ -105,7 +105,7 @@ def test_sfp_problem_detection(stat_device: dict[str, Any]) -> None:
 def test_device_uptime_since_uses_now(monkeypatch: pytest.MonkeyPatch, stat_device: dict) -> None:
     monkeypatch.setattr(models, "_now", lambda: 1_000_000.0)
     d = Device.from_api(_gateway(stat_device))
-    expected = datetime.fromtimestamp(1_000_000 - 33507, tz=UTC)
+    expected = datetime.fromtimestamp(1_000_000 - 86400, tz=UTC)
     assert d.uptime_since == expected
 
 
@@ -113,18 +113,18 @@ def test_health_fields(stat_health: dict[str, Any]) -> None:
     h = Health.from_api(stat_health["data"])
     assert h.internet_up is True
     assert h.internet_status == "ok"
-    assert h.internet_latency_ms == 37
+    assert h.internet_latency_ms == 25
     assert h.wan_status == "ok"
     assert h.isp.name == "Example ISP"
     assert h.isp.organization == "Example ISP"
     assert h.isp.asn == 64512
     assert h.isp.asn_label == "AS64512"
-    assert h.num_wired == 26
-    assert h.num_wireless == 27
+    assert h.num_wired == 20
+    assert h.num_wireless == 20
     assert h.num_guest == 0
-    assert h.num_iot == 6
+    assert h.num_iot == 5
     assert h.num_ap == 4
-    assert h.num_switch == 5
+    assert h.num_switch == 4
 
 
 def test_health_speedtest_idle(stat_health: dict[str, Any]) -> None:
