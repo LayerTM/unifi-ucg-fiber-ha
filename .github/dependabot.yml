@@ -40,3 +40,27 @@ updates:
     groups:
       python-dependencies:
         patterns: ["*"]
+
+  # The CI tools, hash-locked: Dependabot moves `requirements.in` and recompiles
+  # `requirements.txt` with every hash.
+  - package-ecosystem: pip
+    directory: "/.github/ci-tools"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"
+    labels: ["dependencies"]
+    groups:
+      ci-tools:
+        patterns: ["*"]
+
+  - package-ecosystem: pre-commit
+    directory: "/"
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"
+    labels: ["dependencies"]
+    groups:
+      pre-commit:
+        patterns: ["*"]

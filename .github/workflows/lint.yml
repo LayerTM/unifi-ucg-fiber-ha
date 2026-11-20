@@ -4,17 +4,38 @@ on:
   push:
   pull_request:
 
+# Every `run:` under a pipefail shell: GitHub's default returns only the last
+# command of a pipe, so a failing producer would leave the step green.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   ruff:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
-      - name: Install ruff
-        run: pip install "ruff>=0.6"
+      - name: Install CI tools
+        # Versions and hashes: .github/ci-tools/requirements.txt.
+        run: pip install --require-hashes --no-deps -r .github/ci-tools/requirements.txt
       - name: Lint
         run: ruff check .
       - name: Format check
         run: ruff format --check .
+
+  ci-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Install CI tools
+        run: pip install --require-hashes --no-deps -r .github/ci-tools/requirements.txt
+      - name: Test the rule checker
+        run: python .github/scripts/test_ci_gates.py
+      - name: Workflows and scripts follow the CI rules
+        run: python .github/scripts/ci_gates.py

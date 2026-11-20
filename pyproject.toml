@@ -23,13 +23,13 @@ dependencies = ["aiohttp>=3.9", "yarl>=1.9"]
 [project.optional-dependencies]
 cli = ["typer>=0.12", "rich>=13"]              # unifi-gateway CLI
 mcp = ["mcp>=2"]                                  # unifi-gateway-mcp server
+# ruff and mypy are not listed: their versions are stated once, hash-locked, in
+# `.github/ci-tools/requirements.txt`, which CI and contributors install.
 dev = [
   "pytest>=8",
   "pytest-asyncio>=0.23",
   "pytest-cov>=5",
   "pytest-socket>=0.7",
-  "mypy>=1.11",
-  "ruff>=0.6",
   # Declared, not inherited: the TLS tests issue a real handshake against a
   # self-signed certificate they generate, so the pinning is exercised rather
   # than mocked. cryptography arrives transitively today; a transitive
@@ -75,6 +75,13 @@ src = ["src", "custom_components", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "ASYNC", "RUF", "PTH", "TID"]
+
+# The CI rule checker keeps its own line layout.
+[tool.ruff.lint.per-file-ignores]
+".github/scripts/*" = ["E501"]
+
+[tool.ruff.format]
+exclude = [".github/scripts/*"]
 
 [tool.mypy]
 # Library (aiounifigw) targets 3.12+. The HA integration is checked separately

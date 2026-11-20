@@ -1,0 +1,68 @@
+name: Dependabot auto-merge
+
+# Automatically merges Dependabot pull requests for minor and patch updates once
+# all required status checks pass. Anything else -- major version bumps or updates
+# whose type cannot be determined -- is left for manual review (fail-closed).
+#
+# Runs on `pull_request`: a Dependabot-triggered run executes the workflow from
+# the pull request's own branch with a read-only GITHUB_TOKEN and no repository
+# secrets by default, and the `permissions` block below raises the token to the
+# scopes the merge needs. The job is limited to pull requests authored by Dependabot.
+#
+# Because the workflow definition comes from the pull request itself, a Dependabot
+# bump of this very file would run its new action pins with the raised token before
+# anyone reviewed them. The first step is therefore a plain `run:` step that holds
+# such a pull request (or any whose changed files cannot be read) for review, and
+# every later step runs only when that guard passed.
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Every `run:` under a pipefail shell: GitHub's default returns only the last
+# command of a pipe, so a failing producer would leave the step green.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  auto-merge:
+    if: ${{ github.event.pull_request.user.login == 'dependabot[bot]' && github.actor == 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hold changes to this workflow for review
+        id: guard
+        run: |
+          if ! files="$(gh api "repos/$REPO/pulls/$PR_NUMBER/files" --paginate --jq '.[].filename')"; then
+            reason="the changed files could not be read"
+          elif grep -qxF '.github/workflows/dependabot-auto-merge.yml' <<< "$files"; then
+            reason="it changes the auto-merge workflow itself"
+          else
+            echo "safe=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "safe=false" >> "$GITHUB_OUTPUT"
+          echo "::notice::Auto-merge skipped: $reason, so this pull request needs manual review."
+          gh pr edit "$PR_NUMBER" --add-label "needs review"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+
+      - name: Fetch Dependabot metadata
+        id: metadata
+        if: ${{ steps.guard.outputs.safe == 'true' }}
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+
+      # Allowlist (fail-closed): only merge when the update type is explicitly
+      # minor or patch. An empty/undetermined update-type does NOT match, so an
+      # ambiguous update is held for review instead of merged.
+      - name: Enable auto-merge for minor and patch updates
+        if: ${{ steps.guard.outputs.safe == 'true' && (steps.metadata.outputs.update-type == 'version-update:semver-minor' || steps.metadata.outputs.update-type == 'version-update:semver-patch') }}
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

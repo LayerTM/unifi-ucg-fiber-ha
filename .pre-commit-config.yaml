@@ -21,12 +21,19 @@ repos:
         pass_filenames: false
         files: ^src/aiounifigw/
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.20
-    hooks:
+      # The ruff that `.github/ci-tools/requirements.txt` installs, so the hook
+      # and CI cannot disagree about the version.
       - id: ruff
-        args: [--fix]
+        name: ruff
+        entry: ruff check --fix
+        language: system
+        types_or: [python, pyi]
+
       - id: ruff-format
+        name: ruff format
+        entry: ruff format
+        language: system
+        types_or: [python, pyi]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0

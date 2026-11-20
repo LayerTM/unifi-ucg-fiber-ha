@@ -1,0 +1,8 @@
+# Python tools the workflows install, at exact versions. Dependabot moves them
+# and recompiles requirements.txt, which holds every distribution with every
+# hash; CI installs that file with `pip install --require-hashes --no-deps -r`.
+# The library and test dependencies are not here: they float to the newest
+# release on purpose (see `pyproject.toml`).
+mypy==2.4.1
+pyyaml==6.0.3
+ruff==0.17.6
