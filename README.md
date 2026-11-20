@@ -67,7 +67,8 @@ behind the console reverse proxy (`https://<host>/proxy/network/api/...`). The
 integration authenticates locally and polls three read endpoints —
 `/stat/device`, `/stat/health`, `/stat/sysinfo` — plus `/api/system` for device
 identity. Where the Network application serves its v2 site dashboard, two of its
-widgets (WAN activity and threat detection) are read as well. Everything is served from one shared coordinator fetch. See
+widgets (WAN activity and threat detection) are read as well, and where it serves
+its v2 system log, the newest entries are searched for gateway events. Everything is served from one shared coordinator fetch. See
 [`docs/API.md`](docs/API.md) for the exact endpoints and fields.
 
 Two authentication methods are supported; pick one during setup:
@@ -108,6 +109,13 @@ sub-device per WAN uplink and per populated SFP+ port.
   module-problem binary sensor (Rx-LOS / Tx-fault); vendor and part appear on the
   sub-device info.
 - **VPN** — site-to-site enabled and active remote-user count.
+- **Gateway event** *(where the system log is available)* — an `event` entity
+  that fires once for every new entry of the gateway's system log: internet and
+  WAN, security (threats, firewall blocks), admin activity, power, UniFi devices,
+  software updates, Ethernet ports and VPN. The event type is the category; the
+  event, severity, title and message come with it. Client connections and roams
+  are left out (the official `unifi` integration tracks clients). Entries written
+  before Home Assistant started are not replayed.
 
 Requires **Home Assistant 2025.3+** — the release that introduced
 `AddConfigEntryEntitiesCallback`, the newest core API this integration uses.
@@ -154,7 +162,8 @@ Nothing is written to or left on the gateway, so no device-side cleanup is neede
 
 ## Security & privacy
 
-- Read-only by default: the polling client issues nothing but GET requests, and
+- Read-only by default: the polling client issues GET requests and one
+  system-log search (a POST whose body is the query; it changes nothing), and
   the control actions are opt-in and off until you switch them on — see
   [Controls](#controls-opt-in).
 - **The gateway's certificate is trusted on first use, not ignored.** A UniFi OS
@@ -205,8 +214,10 @@ Off by default. Enable **Configure → Enable control actions** to add a **Run
 speedtest** button and a **Restart** button.
 
 **Where the read-only boundary actually is.** It is a property of this
-integration, not of your credential. The polling client only ever issues GET
-requests, and no control exists until you switch it on. A UniFi API key is *not*
+integration, not of your credential. The polling client issues GET requests and
+one POST that is a search — the system log takes its time window and categories
+as a request body, and the search changes nothing — and no control exists until
+you switch it on. A UniFi API key is *not*
 read-only by nature: UniFi's own local Network API authenticates state-changing
 requests with the same `X-API-Key` header it uses for reads.
 
@@ -265,6 +276,9 @@ credential.
   UniFi Network application the console reports only *that* an update is
   available, not which version, so an `update` entity could not show what it
   would update to; the update-available binary sensor covers it instead.
+- **Event bursts.** Each poll reads up to 500 system-log entries of the gateway
+  categories (five pages of 100). A larger burst between two polls reports its
+  newest 500 and logs a warning naming how many older entries were skipped.
 - **API-key scope.** An API key limited to the Integration API only cannot reach
   the classic `/stat/*` telemetry — use a full-access key or a local account.
 

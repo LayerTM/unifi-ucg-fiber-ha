@@ -17,9 +17,12 @@ from .const import (
     PATH_STAT_HEALTH,
     PATH_STAT_SYSINFO,
     PATH_SYSTEM,
+    PATH_SYSTEM_LOG,
+    SYSTEM_LOG_CATEGORIES,
 )
 from .exceptions import GwApiError
 from .models import DASHBOARD_WINDOW_S, Dashboard, Device, Health, SysInfo, SystemIdentity
+from .system_log import MAX_PAGES, PAGE_SIZE, SystemLog
 from .transport import GatewayTransport
 
 
@@ -114,6 +117,33 @@ class GatewayClient:
         """Per-WAN link quality and threat detection from the v2 site dashboard."""
         path = PATH_DASHBOARD.format(site=self._site, window=DASHBOARD_WINDOW_S)
         return Dashboard.from_api(await self._transport.get_json(path))
+
+    async def get_system_log(self, start_ms: int, end_ms: int, *, page: int = 0) -> SystemLog:
+        """One page (newest first) of the gateway categories' system log in a time window.
+
+        A search sent as a POST body (time window, page, categories); it reads
+        the log and changes nothing.
+        """
+        body = {
+            "timestampFrom": start_ms,
+            "timestampTo": end_ms,
+            "pageNumber": page,
+            "pageSize": PAGE_SIZE,
+            "categories": list(SYSTEM_LOG_CATEGORIES),
+        }
+        path = PATH_SYSTEM_LOG.format(site=self._site)
+        return SystemLog.from_api(await self._transport.query_json(path, body))
+
+    async def get_system_log_window(self, start_ms: int, end_ms: int) -> SystemLog:
+        """Every entry of a time window, read page by page up to ``MAX_PAGES``."""
+        pages = [await self.get_system_log(start_ms, end_ms)]
+        while (
+            len(pages) < MAX_PAGES
+            and pages[-1].entries
+            and sum(len(p.entries) for p in pages) < pages[-1].total
+        ):
+            pages.append(await self.get_system_log(start_ms, end_ms, page=len(pages)))
+        return SystemLog.merged(pages)
 
     async def close(self) -> None:
         """Release client resources.

@@ -7,6 +7,13 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- **Gateway events.** Where the UniFi Network application serves its system log,
+  a *Gateway event* entity fires once for every new entry: internet and WAN,
+  security, admin activity, power, UniFi devices, software updates, Ethernet
+  ports and VPN, with the event, severity, title and message. Client connections
+  and roams are left out, and entries from before Home Assistant started are not
+  replayed. The log is read with a search request that changes nothing on the
+  gateway.
 - **Packet loss per WAN.** Where the UniFi Network application serves its site
   dashboard, every WAN gets a *Packet loss* sensor and a *Peak latency* sensor
   (disabled by default) for the last complete five-minute interval the gateway

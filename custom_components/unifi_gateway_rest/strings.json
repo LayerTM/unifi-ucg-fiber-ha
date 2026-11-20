@@ -193,6 +193,25 @@
       "sfp_present": { "name": "Module present" },
       "sfp_problem": { "name": "Module problem" }
     },
+    "event": {
+      "gateway_event": {
+        "name": "Gateway event",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "internet_and_wan": "Internet and WAN",
+              "power": "Power",
+              "audit": "Admin activity",
+              "security": "Security",
+              "unifi_devices": "UniFi devices",
+              "software_updates": "Software updates",
+              "unifi_ethernet_ports": "Ethernet ports",
+              "vpn": "VPN"
+            }
+          }
+        }
+      }
+    },
     "button": {
       "run_speedtest": { "name": "Run speedtest" },
       "restart": { "name": "Restart" }

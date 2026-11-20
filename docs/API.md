@@ -109,6 +109,27 @@ The newest interval is reported while it is still filling; the last interval
 that had ended by `end_timestamp` is used. `threats` and `scanned_bytes` are
 totals over the requested window.
 
+## `POST /proxy/network/v2/api/site/{site}/system-log/all` — system log (read query)
+
+A search, not a change: the body is the query. Sent as
+`{"timestampFrom", "timestampTo" (epoch ms), "pageNumber", "pageSize": 100,
+"categories": [...]}` with every category except `CLIENT_DEVICES`, page by page
+(from `0`) while `total_element_count` exceeds the entries read, up to five pages. The endpoint is
+optional; when setup cannot read it, the event entity is not created.
+
+Returns `{ "data": [ <entry>, … ], "total_element_count", "page_number", "total_page_count" }`,
+newest first.
+
+| Field | Used for |
+|---|---|
+| `id`, `timestamp` (epoch ms) | identity of an entry; reported once |
+| `category` | event type (`INTERNET_AND_WAN`, `POWER`, `AUDIT`, `SECURITY`, `UNIFI_DEVICES`, `SOFTWARE_UPDATES`, `UNIFI_ETHERNET_PORTS`, `VPN`) |
+| `event`, `severity` | event attributes (e.g. `THREAT_BLOCKED`, `HIGH`) |
+| `title_raw`, `message_raw` + `parameters.<NAME>.name` | title and message, `{NAME}` placeholders filled from the parameters |
+
+The log has no "after this entry" query, so each poll searches a window that
+overlaps the previous one by five minutes and drops entries already reported.
+
 ## `POST /proxy/network/api/s/{site}/cmd/devmgr` — control actions (write)
 
 Opt-in only. Whether a given credential may run these commands is decided by the

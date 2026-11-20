@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import timedelta
@@ -25,6 +26,8 @@ from .aiounifigw import (
     GwConnectionError,
     Health,
     SysInfo,
+    SystemLogCursor,
+    SystemLogEntry,
 )
 from .const import DOMAIN
 from .issues import clear_cert_mismatch, raise_cert_mismatch
@@ -40,6 +43,8 @@ class GwData:
     health: Health | None
     sysinfo: SysInfo | None
     dashboard: Dashboard | None = None
+    new_log_entries: tuple[SystemLogEntry, ...] = ()
+    """System-log entries first seen in this update, oldest first."""
 
 
 class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
@@ -62,6 +67,7 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
         )
         self.client = client
         self.capabilities = capabilities
+        self._log_cursor = SystemLogCursor()
         self.hub_device_id: str | None = None
         """Device-registry id of the hub, set by `async_setup_entry` before the
         platforms load. Sub-devices point at it (see `entity.link_to_hub`)."""
@@ -70,7 +76,7 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
         """Run a supplementary fetch, degrading to None when the console refuses it.
 
         Only the core device read decides re-authentication. A supplementary read
-        (health, sysinfo, dashboard) runs after that read has succeeded with the
+        (health, sysinfo, dashboard, system log) runs after that read has succeeded with the
         same credential, so a 401 here means this one endpoint refuses it, not that
         the credential is wrong: like a scope denial or an API error, the field
         degrades to None and the core telemetry stays available. A connection
@@ -86,10 +92,14 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
         try:
             device = await self.client.get_device()
             caps = self.capabilities
-            health, sysinfo, dashboard = await asyncio.gather(
+            start_ms, end_ms = self._log_cursor.window(int(time.time() * 1000))
+            health, sysinfo, dashboard, log = await asyncio.gather(
                 self._optional(self.client.get_health) if caps.health else _none(),
                 self._optional(self.client.get_sysinfo) if caps.sysinfo else _none(),
                 self._optional(self.client.get_dashboard) if caps.dashboard else _none(),
+                self._optional(lambda: self.client.get_system_log_window(start_ms, end_ms))
+                if caps.system_log
+                else _none(),
             )
         except GwAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
@@ -111,7 +121,14 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
         # that is no longer served.
         if self.config_entry is not None:
             clear_cert_mismatch(self.hass, self.config_entry)
-        return GwData(device=device, health=health, sysinfo=sysinfo, dashboard=dashboard)
+        new_entries = self._log_cursor.advance(log) if log is not None else ()
+        return GwData(
+            device=device,
+            health=health,
+            sysinfo=sysinfo,
+            dashboard=dashboard,
+            new_log_entries=new_entries,
+        )
 
 
 async def _none() -> None:

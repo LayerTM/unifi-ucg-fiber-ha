@@ -13,6 +13,7 @@ DOMAIN: Final = "unifi_gateway_rest"
 PLATFORMS: Final = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
+    Platform.EVENT,
     Platform.SENSOR,
 ]
 

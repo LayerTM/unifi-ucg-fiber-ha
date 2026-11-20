@@ -37,6 +37,24 @@ PATH_DASHBOARD: Final = (
     "?historySeconds={window}&widgets=wan_activity,cybersecure"
 )
 
+# UniFi Network application v2 API: the system log. Searched with a POST whose
+# body is the query (time window, page, categories); it changes nothing.
+PATH_SYSTEM_LOG: Final = "/proxy/network/v2/api/site/{site}/system-log/all"
+
+# System-log categories reported as gateway events. Client connections, roams and
+# disconnects (``CLIENT_DEVICES``) are left out: the official `unifi`
+# integration tracks clients, and they are most of the log.
+SYSTEM_LOG_CATEGORIES: Final = (
+    "INTERNET_AND_WAN",
+    "POWER",
+    "AUDIT",
+    "SECURITY",
+    "UNIFI_DEVICES",
+    "SOFTWARE_UPDATES",
+    "UNIFI_ETHERNET_PORTS",
+    "VPN",
+)
+
 # Write / action endpoint (devmgr command channel). Payloads follow the
 # well-established UniFi controller convention; they are NOT triggered during
 # read-only operation and require a write-capable auth (session, or a

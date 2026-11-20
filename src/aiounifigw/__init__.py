@@ -31,6 +31,7 @@ from .models import (
     Wan,
     WanQuality,
 )
+from .system_log import SystemLog, SystemLogCursor, SystemLogEntry
 from .tls import (
     GwCertificateMismatch,
     TlsMode,
@@ -66,6 +67,9 @@ __all__ = [
     "StorageVolume",
     "SysInfo",
     "SystemIdentity",
+    "SystemLog",
+    "SystemLogCursor",
+    "SystemLogEntry",
     "Temperature",
     "ThreatDetection",
     "TlsMode",
