@@ -17,9 +17,12 @@ from .const import (
     PATH_STAT_HEALTH,
     PATH_STAT_SYSINFO,
     PATH_SYSTEM,
+    PATH_SYSTEM_LOG,
+    SYSTEM_LOG_CATEGORIES,
 )
 from .exceptions import GwApiError
 from .models import DASHBOARD_WINDOW_S, Dashboard, Device, Health, SysInfo, SystemIdentity
+from .system_log import PAGE_SIZE, SystemLog
 from .transport import GatewayTransport
 
 
@@ -114,6 +117,22 @@ class GatewayClient:
         """Per-WAN link quality and threat detection from the v2 site dashboard."""
         path = PATH_DASHBOARD.format(site=self._site, window=DASHBOARD_WINDOW_S)
         return Dashboard.from_api(await self._transport.get_json(path))
+
+    async def get_system_log(self, start_ms: int, end_ms: int) -> SystemLog:
+        """The newest system-log entries of the gateway categories in a time window.
+
+        A search sent as a POST body (time window, first page, categories); it
+        reads the log and changes nothing.
+        """
+        body = {
+            "timestampFrom": start_ms,
+            "timestampTo": end_ms,
+            "pageNumber": 0,
+            "pageSize": PAGE_SIZE,
+            "categories": list(SYSTEM_LOG_CATEGORIES),
+        }
+        path = PATH_SYSTEM_LOG.format(site=self._site)
+        return SystemLog.from_api(await self._transport.query_json(path, body))
 
     async def close(self) -> None:
         """Release client resources.

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
@@ -20,6 +21,7 @@ class Capabilities:
     health: bool
     sysinfo: bool
     dashboard: bool = False  # v2 site dashboard (UniFi Network with the v2 API)
+    system_log: bool = False  # v2 system log
 
 
 async def _reachable(call: Callable[[], Awaitable[object]]) -> bool:
@@ -60,4 +62,15 @@ async def probe(client: GatewayClient) -> Capabilities:
         health=await _reachable(client.get_health),
         sysinfo=await _reachable(client.get_sysinfo),
         dashboard=await _supported(client.get_dashboard),
+        system_log=await _supported(_system_log_probe(client)),
     )
+
+
+def _system_log_probe(client: GatewayClient) -> Callable[[], Awaitable[object]]:
+    """A one-minute search: enough to learn whether the log answers."""
+
+    async def call() -> object:
+        now_ms = int(time.time() * 1000)
+        return await client.get_system_log(now_ms - 60_000, now_ms)
+
+    return call

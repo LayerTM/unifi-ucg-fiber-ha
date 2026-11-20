@@ -2,7 +2,8 @@
 # Capture /stat/device from a UCG-Fiber (UniFi OS) via BOTH auth methods, then
 # produce a PII-safe capability summary you can share.
 #
-# Nothing is installed on the gateway. All calls are local + read-only (GET).
+# Nothing is installed on the gateway. All calls are local and read-only: GETs,
+# the login, and one system-log search whose POST body is the query.
 #
 # Config via env vars:
 #   GW=192.0.2.1                 # UCG-Fiber IP/host (NO https://, NO trailing slash)   [required]
@@ -67,6 +68,13 @@ if [ "$have_key" -eq 1 ]; then
   curl -sk --max-time 30 -H "X-API-Key: $UNIFI_API_KEY" \
     "$BASE/proxy/network/v2/api/site/$SITE/aggregated-dashboard?historySeconds=3600&widgets=wan_activity,cybersecure" \
     -o "$OUT/aggregated_dashboard.apikey.json" || true
+
+  echo "[*] API-key: v2 system log, last hour (a search: the POST body is the query, nothing changes)"
+  NOW_MS=$(($(date +%s) * 1000))
+  curl -sk --max-time 30 -X POST -H "X-API-Key: $UNIFI_API_KEY" -H 'Content-Type: application/json' \
+    --data-binary "{\"timestampFrom\":$((NOW_MS - 3600000)),\"timestampTo\":$NOW_MS,\"pageNumber\":0,\"pageSize\":100}" \
+    "$BASE/proxy/network/v2/api/site/$SITE/system-log/all" \
+    -o "$OUT/system_log.apikey.json" || true
 
   echo "[*] API-key: Integration API /integration/v1/sites  (for comparison; telemetry-poor)"
   curl -sk --max-time 20 -H "X-API-Key: $UNIFI_API_KEY" \

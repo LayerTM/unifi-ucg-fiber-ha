@@ -54,6 +54,9 @@
       "sfp_present": { "default": "mdi:expansion-card" },
       "sfp_problem": { "default": "mdi:alert-circle" }
     },
+    "event": {
+      "gateway_event": { "default": "mdi:message-alert-outline" }
+    },
     "button": {
       "run_speedtest": { "default": "mdi:speedometer" },
       "restart": { "default": "mdi:restart" }

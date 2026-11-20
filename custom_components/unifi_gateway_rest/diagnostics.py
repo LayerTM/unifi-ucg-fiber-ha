@@ -45,6 +45,7 @@ async def async_get_config_entry_diagnostics(
             "health": caps.health,
             "sysinfo": caps.sysinfo,
             "dashboard": caps.dashboard,
+            "system_log": caps.system_log,
         },
         "device": async_redact_data(_plain(data.device), DATA_REDACT),
         "health": async_redact_data(_plain(data.health), DATA_REDACT) if data.health else None,

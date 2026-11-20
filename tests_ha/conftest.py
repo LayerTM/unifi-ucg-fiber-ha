@@ -17,6 +17,7 @@ from custom_components.unifi_gateway_rest.aiounifigw import (
     Health,
     SysInfo,
     SystemIdentity,
+    SystemLog,
     TlsMode,
 )
 from custom_components.unifi_gateway_rest.const import (
@@ -149,6 +150,7 @@ def mock_client(gateway_models: dict[str, Any]) -> AsyncMock:
     client.get_health = AsyncMock(return_value=gateway_models["health"])
     client.get_sysinfo = AsyncMock(return_value=gateway_models["sysinfo"])
     client.get_dashboard = AsyncMock(return_value=gateway_models["dashboard"])
+    client.get_system_log = AsyncMock(return_value=SystemLog(entries=(), total=0))
     client.close = AsyncMock(return_value=None)
     return client
 

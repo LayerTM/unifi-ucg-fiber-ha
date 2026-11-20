@@ -1,0 +1,94 @@
+{
+  "data": [
+    {
+      "category": "SECURITY",
+      "event": "THREAT_BLOCKED",
+      "id": "000000000000000000000003",
+      "key": "THREAT_BLOCKED_1",
+      "message_raw": "A network intrusion attempt from {SRC_IP} to {DST_IP} has been detected and blocked.",
+      "parameters": {
+        "SRC_IP": {
+          "id": "198.51.100.7",
+          "name": "198.51.100.7"
+        },
+        "DST_IP": {
+          "id": "192.0.2.20",
+          "name": "192.0.2.20"
+        },
+        "CONSOLE_NAME": {
+          "id": "aa:bb:cc:00:11:22",
+          "name": "UCG Fiber"
+        }
+      },
+      "severity": "HIGH",
+      "show_on_dashboard": true,
+      "status": "NEW",
+      "subcategory": "EXAMPLE",
+      "target": "DEVICE",
+      "timestamp": 1795000120000,
+      "title_raw": "Threat Detected and Blocked",
+      "type": "EXAMPLE"
+    },
+    {
+      "category": "INTERNET_AND_WAN",
+      "event": "ISP_HIGH_LATENCY",
+      "id": "000000000000000000000002",
+      "key": "ISP_HIGH_LATENCY_1",
+      "message_raw": "Internet connection {WAN_ID} {ISP_NAME} on port {PORT} is experiencing high latency.",
+      "parameters": {
+        "WAN_ID": {
+          "id": "WAN",
+          "name": "WAN1"
+        },
+        "ISP_NAME": {
+          "id": "64496",
+          "name": "Example ISP"
+        },
+        "PORT": {
+          "id": "5",
+          "name": "5"
+        }
+      },
+      "severity": "MEDIUM",
+      "show_on_dashboard": true,
+      "status": "NEW",
+      "subcategory": "EXAMPLE",
+      "target": "DEVICE",
+      "timestamp": 1795000060000,
+      "title_raw": "{WAN_ID} High Latency Detected",
+      "type": "EXAMPLE"
+    },
+    {
+      "category": "AUDIT",
+      "event": "ADMIN_ACCESS",
+      "id": "000000000000000000000001",
+      "key": "ADMIN_ACCESS_1",
+      "message_raw": "{ADMIN} accessed UniFi Network using the {PLATFORM}. Source IP: {IP}",
+      "parameters": {
+        "ADMIN": {
+          "id": "00000000000000000000aaaa",
+          "name": "admin"
+        },
+        "PLATFORM": {
+          "id": "web",
+          "name": "Web"
+        },
+        "IP": {
+          "id": "192.0.2.30",
+          "name": "192.0.2.30"
+        }
+      },
+      "severity": "MEDIUM",
+      "show_on_dashboard": true,
+      "status": "NEW",
+      "subcategory": "EXAMPLE",
+      "target": "DEVICE",
+      "timestamp": 1795000000000,
+      "title_raw": "Network Accessed",
+      "type": "EXAMPLE"
+    }
+  ],
+  "page_number": 0,
+  "total_element_count": 3,
+  "total_page_count": 1
+}

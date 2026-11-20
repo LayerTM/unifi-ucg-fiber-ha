@@ -83,6 +83,16 @@ class GatewayTransport:
         """GET *path* and return parsed JSON, or raise a typed error."""
         return await self._call("GET", path, expect_json=True, allow_reauth=allow_reauth)
 
+    async def query_json(self, path: str, body: Any, *, allow_reauth: bool = True) -> Any:
+        """POST a read query (*body* is the search, not a change) and return parsed JSON.
+
+        Some UniFi Network v2 searches take their filters as a POST body. They are
+        reads like :meth:`get_json` and classified the same way.
+        """
+        return await self._call(
+            "POST", path, json_body=body, expect_json=True, allow_reauth=allow_reauth
+        )
+
     async def send(
         self,
         method: str,
