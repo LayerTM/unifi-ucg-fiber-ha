@@ -65,8 +65,10 @@ Fields consumed from the gateway object:
 | `num_sta` | client count |
 | `temperatures[]` = `{name, type, value}` | per-sensor temperature |
 | `storage[]` = `{name, mount_point, type, size, used}` | internal storage usage |
-| `wan1`..`wan6` = `{up, is_uplink, enable, ip, media, speed, max_speed, rx_bytes[-r], tx_bytes[-r]}` | per-WAN state / throughput |
+| `wan1`..`wan6` = `{ifname, up, is_uplink, enable, ip, media, speed, max_speed, rx_bytes[-r], tx_bytes[-r]}` | per-WAN state / throughput |
 | `uptime_stats.WAN`/`WAN2` = `{availability, latency_average, uptime}` | per-WAN availability / latency / uptime |
+| `ids_ips_signature` = `{rule_count, update_time (epoch ms), signature_type, is_activating}` | IDS/IPS rules loaded / rule-set update time |
+| `speedtest-status.interface_name` | interface of the last speedtest, matched to `wanN.ifname` (Network 10.6+) |
 | `port_table[]` `sfp_found`, `sfp_vendor`, `sfp_part`, `sfp_rx_los`, `sfp_tx_fault` | SFP presence / health (optical DDM is **not** reported) |
 
 `wanN` maps to the `uptime_stats` key `WAN` (n=1) or `WAN{n}`. The active uplink

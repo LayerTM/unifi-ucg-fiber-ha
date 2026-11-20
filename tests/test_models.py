@@ -209,3 +209,50 @@ def test_epoch_and_uptime_edges() -> None:
     assert models._epoch(None) is None
     assert models._uptime(-1) is None
     assert models._uptime(None) is None
+
+
+def test_ips_signatures_parsed(stat_device: dict[str, Any]) -> None:
+    d = Device.from_api(_gateway(stat_device))
+    assert d.ips is not None
+    assert d.ips.rule_count == 30000
+    assert d.ips.updated == datetime.fromtimestamp(1780000000, UTC)
+
+
+@pytest.mark.parametrize(
+    ("raw", "count", "updated"),
+    [
+        ({"rule_count": 0, "update_time": 0}, 0, None),
+        ({"rule_count": "12", "update_time": "1780000000500"}, 12, 1780000000.5),
+        ({"rule_count": True, "update_time": None}, None, None),
+    ],
+)
+def test_ips_signatures_edges(
+    stat_device: dict[str, Any], raw: dict[str, Any], count: int | None, updated: float | None
+) -> None:
+    gw = {**_gateway(stat_device), "ids_ips_signature": raw}
+    ips = Device.from_api(gw).ips
+    assert ips is not None
+    assert ips.rule_count == count
+    assert ips.updated == (datetime.fromtimestamp(updated, UTC) if updated else None)
+    assert ips.activating is False
+
+
+def test_ips_absent_without_threat_detection(stat_device: dict[str, Any]) -> None:
+    gw = {k: v for k, v in _gateway(stat_device).items() if k != "ids_ips_signature"}
+    assert Device.from_api(gw).ips is None
+
+
+def test_speedtest_wan_unknown_before_network_10_6(stat_device: dict[str, Any]) -> None:
+    """Older firmware does not say which interface a speedtest used."""
+    d = Device.from_api(_gateway(stat_device))
+    assert d.speedtest_ifname == ""
+    assert d.speedtest_wan is None
+
+
+@pytest.mark.parametrize(("ifname", "wan_id"), [("eth0", "WAN"), ("eth3", "WAN2"), ("eth9", None)])
+def test_speedtest_wan_resolves_by_interface(
+    stat_device: dict[str, Any], ifname: str, wan_id: str | None
+) -> None:
+    gw = {**_gateway(stat_device), "speedtest-status": {"interface_name": ifname}}
+    wan = Device.from_api(gw).speedtest_wan
+    assert (wan.id if wan else None) == wan_id

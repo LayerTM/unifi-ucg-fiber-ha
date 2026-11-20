@@ -60,6 +60,10 @@ async def test_hub_and_subdevice_sensor_states(
     assert state_of("clients") == "40"
     assert state_of("isp") == "Example ISP"
     assert state_of("active_wan") == "WAN"
+    assert state_of("ips_rules") == "30000"
+    assert state_of("ips_updated") == "2026-05-28T20:26:40+00:00"
+    # this firmware does not report which WAN a speedtest used
+    assert state_of("speedtest_wan") == "unknown"
     # per-WAN sub-device sensor
     assert state_of("wan_availability") == "100.0"
 

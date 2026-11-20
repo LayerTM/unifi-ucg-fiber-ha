@@ -80,6 +80,17 @@ def _epoch(value: Any) -> datetime | None:
         return None
 
 
+def _epoch_ms(value: Any) -> datetime | None:
+    """Parse an epoch-milliseconds timestamp to a UTC datetime; 0/absent -> None."""
+    millis = _i(value)
+    if not millis:
+        return None
+    try:
+        return datetime.fromtimestamp(millis / 1000, tz=UTC)
+    except (OverflowError, OSError, ValueError):
+        return None
+
+
 def _uptime(value: Any) -> datetime | None:
     """Convert an uptime in seconds to the boot-time UTC datetime.
 
@@ -250,6 +261,30 @@ class SfpPort:
 
 
 @dataclass(frozen=True, slots=True)
+class IpsSignatures:
+    """The IDS/IPS rule set loaded on the gateway (``ids_ips_signature``).
+
+    ``rule_count`` is the number of rules the threat-detection engine has applied;
+    a rule-set update that fails leaves it at zero while the console still looks
+    healthy, which is what makes the count worth watching.
+    """
+
+    rule_count: int | None
+    updated: datetime | None
+    signature_type: str  # rule-set family, e.g. "ET"
+    activating: bool  # True while a freshly downloaded set is being applied
+
+    @classmethod
+    def from_api(cls, d: dict[str, Any]) -> IpsSignatures:
+        return cls(
+            rule_count=_i(d.get("rule_count")),
+            updated=_epoch_ms(d.get("update_time")),
+            signature_type=_s(d.get("signature_type")),
+            activating=_b(d.get("is_activating")),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class Device:
     """The gateway/console device object from ``/stat/device``."""
 
@@ -273,6 +308,8 @@ class Device:
     storage: tuple[StorageVolume, ...]
     wans: tuple[Wan, ...]
     sfp_ports: tuple[SfpPort, ...]
+    ips: IpsSignatures | None  # absent on firmware without threat detection
+    speedtest_ifname: str  # interface the last speedtest ran on ("" when not reported)
 
     @property
     def online(self) -> bool:
@@ -291,6 +328,17 @@ class Device:
         """True when the active uplink is not the primary (WAN1)."""
         active = self.active_wan
         return active is not None and active.id != "WAN"
+
+    @property
+    def speedtest_wan(self) -> Wan | None:
+        """The WAN uplink the last speedtest measured.
+
+        Since UniFi Network 10.6 a speedtest can run on any WAN, not only the
+        active one, so a result is meaningful only together with its uplink.
+        """
+        if not self.speedtest_ifname:
+            return None
+        return next((w for w in self.wans if w.ifname == self.speedtest_ifname), None)
 
     @property
     def persistent_storage(self) -> StorageVolume | None:
@@ -322,6 +370,9 @@ class Device:
             if "SFP" in _s(p.get("media")).upper():
                 sfp_ports.append(SfpPort.from_api(p))
 
+        ips = d.get("ids_ips_signature")
+        speedtest = d.get("speedtest-status")
+
         return cls(
             mac=_s(d.get("mac")),
             model=_s(d.get("model")),
@@ -347,6 +398,10 @@ class Device:
             ),
             wans=tuple(wans),
             sfp_ports=tuple(sfp_ports),
+            ips=IpsSignatures.from_api(ips) if isinstance(ips, dict) else None,
+            speedtest_ifname=(
+                _s(speedtest.get("interface_name")) if isinstance(speedtest, dict) else ""
+            ),
         )
 
 

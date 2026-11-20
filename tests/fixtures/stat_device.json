@@ -126,7 +126,35 @@
           "sfp_rx_los": false,
           "sfp_tx_fault": false
         }
-      ]
+      ],
+      "ids_ips_signature": {
+        "rule_count": 30000,
+        "update_time": 1780000000000,
+        "signature_type": "ET",
+        "sha_256": "0000000000000000000000000000000000000000000=",
+        "is_activating": false
+      },
+      "speedtest-status": {
+        "latency": 0,
+        "rundate": 0,
+        "runtime": 15,
+        "server": {
+          "cc": "XX",
+          "city": "Example City",
+          "country": "Example Country",
+          "lat": 0.0,
+          "lon": 0.0,
+          "provider": "Example Provider",
+          "provider_url": "https://speedtest.example.net"
+        },
+        "source_interface": "",
+        "status_download": 2,
+        "status_ping": 2,
+        "status_summary": 2,
+        "status_upload": 2,
+        "xput_download": 0.0,
+        "xput_upload": 0.0
+      }
     }
   ]
 }
