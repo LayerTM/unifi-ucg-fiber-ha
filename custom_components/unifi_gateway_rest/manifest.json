@@ -1,6 +1,7 @@
 {
   "domain": "unifi_gateway_rest",
   "name": "UniFi Gateway (non-invasive)",
+  "categories": ["computers_network.routers_network", "computers_network.monitoring"],
   "codeowners": ["@LayerTM"],
   "config_flow": true,
   "documentation": "https://github.com/LayerTM/unifi-ucg-fiber-ha",

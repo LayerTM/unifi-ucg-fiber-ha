@@ -5,8 +5,18 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- **Integration categories for the Home Assistant Marketplace.** The manifest
+  declares `computers_network.routers_network` and
+  `computers_network.monitoring`, so the integration is listed with gateways and
+  monitoring tools.
+
 ### Changed
 
+- **Installation and removal describe the Home Assistant Marketplace.** From
+  Home Assistant 2026.11 the integration is installed and uninstalled under
+  Settings → Marketplace; the HACS steps remain for earlier releases.
 - **Follows the Home Assistant 2026.11 contract for setting up and unloading.**
   On Home Assistant 2026.11 and later, setup and unload signal success the new
   way, and a failed unload is raised with its reason instead of returned as
