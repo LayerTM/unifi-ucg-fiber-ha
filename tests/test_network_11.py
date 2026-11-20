@@ -17,7 +17,7 @@ from typing import Any
 
 import pytest
 
-from aiounifigw.models import Device, Health, SysInfo, SystemIdentity
+from aiounifigw.models import Dashboard, Device, Health, SysInfo, SystemIdentity
 
 _FX = Path(__file__).parent / "fixtures" / "network_11"
 
@@ -116,3 +116,29 @@ def test_speedtest_names_the_wan_it_measured(device: Device) -> None:
     assert device.speedtest_wan.id == "WAN2"
     assert device.active_wan is not None
     assert device.active_wan.id == "WAN"
+
+
+def test_dashboard_wan_quality_uses_the_last_complete_interval() -> None:
+    """The newest five-minute interval is still filling, so the one before is used."""
+    dashboard = Dashboard.from_api(_load("aggregated_dashboard.json"))
+    primary = dashboard.wan_quality["WAN"]
+    assert primary.interval_start == datetime.fromtimestamp(1795000300, UTC)
+    assert primary.packet_loss_pct == 1.5
+    assert (primary.latency_min_ms, primary.latency_avg_ms, primary.latency_max_ms) == (
+        12.0,
+        25.0,
+        50.0,
+    )
+    assert dashboard.wan_quality["WAN2"].packet_loss_pct == 0.0
+
+
+def test_dashboard_threat_detection() -> None:
+    threat = Dashboard.from_api(_load("aggregated_dashboard.json")).threat_detection
+    assert threat is not None
+    assert (threat.enabled, threat.activating, threat.signatures, threat.threats) == (
+        True,
+        False,
+        31000,
+        2,
+    )
+    assert threat.rules_missing is False

@@ -1,0 +1,111 @@
+{
+  "dashboard_meta": {
+    "end_timestamp": 1795000660000,
+    "start_timestamp": 1795000000000,
+    "widgets": [
+      "wan_activity",
+      "cybersecure"
+    ]
+  },
+  "cybersecure": {
+    "enterprise": false,
+    "has_subscription": false,
+    "ips_enabled": true,
+    "is_activating": false,
+    "scanned_bytes": 10000000000,
+    "signature_capacity": 70000,
+    "signatures": 31000,
+    "threats": 2,
+    "updated_timestamp": 1790000000000
+  },
+  "wan_activity": {
+    "activity_by_network_group": {
+      "WAN": {
+        "history": [
+          {
+            "avg_latency_ms": 20.0,
+            "avg_packet_loss_pct": 0.0,
+            "avg_rx_rate_bps": 250000.0,
+            "avg_tx_rate_bps": 50000.0,
+            "max_latency_ms": 40.0,
+            "max_rx_rate_bps": 500000.0,
+            "max_tx_rate_bps": 100000.0,
+            "min_latency_ms": 10.0,
+            "timestamp": 1795000000000
+          },
+          {
+            "avg_latency_ms": 25.0,
+            "avg_packet_loss_pct": 1.5,
+            "avg_rx_rate_bps": 250000.0,
+            "avg_tx_rate_bps": 50000.0,
+            "max_latency_ms": 50.0,
+            "max_rx_rate_bps": 500000.0,
+            "max_tx_rate_bps": 100000.0,
+            "min_latency_ms": 12.0,
+            "timestamp": 1795000300000
+          },
+          {
+            "avg_latency_ms": 90.0,
+            "avg_packet_loss_pct": 9.0,
+            "avg_rx_rate_bps": 250000.0,
+            "avg_tx_rate_bps": 50000.0,
+            "max_latency_ms": 300.0,
+            "max_rx_rate_bps": 500000.0,
+            "max_tx_rate_bps": 100000.0,
+            "min_latency_ms": 30.0,
+            "timestamp": 1795000600000
+          }
+        ],
+        "summary": {
+          "has_lte_mbb_stats": false,
+          "has_nr_mbb_stats": false,
+          "rx_bytes": 1000000000,
+          "tx_bytes": 50000000
+        }
+      },
+      "WAN2": {
+        "history": [
+          {
+            "avg_latency_ms": 30.0,
+            "avg_packet_loss_pct": 0.0,
+            "avg_rx_rate_bps": 250000.0,
+            "avg_tx_rate_bps": 50000.0,
+            "max_latency_ms": 45.0,
+            "max_rx_rate_bps": 500000.0,
+            "max_tx_rate_bps": 100000.0,
+            "min_latency_ms": 15.0,
+            "timestamp": 1795000000000
+          },
+          {
+            "avg_latency_ms": 32.0,
+            "avg_packet_loss_pct": 0.0,
+            "avg_rx_rate_bps": 250000.0,
+            "avg_tx_rate_bps": 50000.0,
+            "max_latency_ms": 48.0,
+            "max_rx_rate_bps": 500000.0,
+            "max_tx_rate_bps": 100000.0,
+            "min_latency_ms": 15.0,
+            "timestamp": 1795000300000
+          },
+          {
+            "avg_latency_ms": 31.0,
+            "avg_packet_loss_pct": 0.0,
+            "avg_rx_rate_bps": 250000.0,
+            "avg_tx_rate_bps": 50000.0,
+            "max_latency_ms": 46.0,
+            "max_rx_rate_bps": 500000.0,
+            "max_tx_rate_bps": 100000.0,
+            "min_latency_ms": 15.0,
+            "timestamp": 1795000600000
+          }
+        ],
+        "summary": {
+          "has_lte_mbb_stats": false,
+          "has_nr_mbb_stats": false,
+          "rx_bytes": 100000000,
+          "tx_bytes": 5000000
+        }
+      }
+    }
+  }
+}

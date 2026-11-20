@@ -6,7 +6,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 from .client import GatewayClient
-from .exceptions import GwCapabilityError
+from .exceptions import GwApiError, GwCapabilityError
 
 
 @dataclass(frozen=True, slots=True)
@@ -16,6 +16,7 @@ class Capabilities:
     device: bool
     health: bool
     sysinfo: bool
+    dashboard: bool = False  # v2 site dashboard (UniFi Network with the v2 API)
 
 
 async def _reachable(call: Callable[[], Awaitable[object]]) -> bool:
@@ -30,10 +31,28 @@ async def _reachable(call: Callable[[], Awaitable[object]]) -> bool:
     return True
 
 
+async def _supported(call: Callable[[], Awaitable[object]]) -> bool:
+    """Like :func:`_reachable`, for an endpoint older firmware does not serve.
+
+    A 404 means this firmware has no such endpoint: the feature is absent, not
+    broken. Every other error propagates as with the core endpoints.
+    """
+    try:
+        await call()
+    except GwCapabilityError:
+        return False
+    except GwApiError as err:
+        if err.status == 404:
+            return False
+        raise
+    return True
+
+
 async def probe(client: GatewayClient) -> Capabilities:
     """Determine endpoint reachability for the client's auth method."""
     return Capabilities(
         device=await _reachable(client.get_device),
         health=await _reachable(client.get_health),
         sysinfo=await _reachable(client.get_sysinfo),
+        dashboard=await _supported(client.get_dashboard),
     )

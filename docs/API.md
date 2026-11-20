@@ -91,6 +91,24 @@ Returns `{ "data": [ <subsystem>, … ] }`, one row per `subsystem`.
 `data[0]` fields: `version` (Network application version), `name`,
 `console_display_version`, `previous_version`, `timezone`, `update_available`.
 
+## `GET /proxy/network/v2/api/site/{site}/aggregated-dashboard` — site dashboard
+
+Read as `?historySeconds=3600&widgets=wan_activity,cybersecure`: only the two
+widgets used, over the last hour (about 10 KB). The endpoint is optional; a
+`404` at setup means the firmware does not serve it and its entities are not
+created.
+
+| Field | Used for |
+|---|---|
+| `dashboard_meta.end_timestamp` (epoch ms) | end of the window, to skip the interval still filling |
+| `wan_activity.activity_by_network_group.<WAN id>.history[]` = `{timestamp (epoch ms), avg_packet_loss_pct, min_latency_ms, avg_latency_ms, max_latency_ms}` | per-WAN packet loss / peak latency, five-minute intervals |
+| `cybersecure.ips_enabled`, `is_activating`, `signatures` | IPS rules missing (enabled, not activating, zero rules) |
+| `cybersecure.threats` | threats detected within the window |
+
+The newest interval is reported while it is still filling; the last interval
+that had ended by `end_timestamp` is used. `threats` and `scanned_bytes` are
+totals over the requested window.
+
 ## `POST /proxy/network/api/s/{site}/cmd/devmgr` — control actions (write)
 
 Opt-in only. Whether a given credential may run these commands is decided by the

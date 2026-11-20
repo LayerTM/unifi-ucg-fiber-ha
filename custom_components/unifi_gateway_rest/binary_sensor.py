@@ -75,6 +75,21 @@ BINARY_SENSORS: tuple[GatewayBinaryDescription, ...] = (
     ),
 )
 
+# Read from the v2 site dashboard; created only when the firmware serves it.
+DASHBOARD_BINARY_SENSORS: tuple[GatewayBinaryDescription, ...] = (
+    GatewayBinaryDescription(
+        key="ips_rules_missing",
+        translation_key="ips_rules_missing",
+        device_class=BinarySensorDeviceClass.PROBLEM,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: (
+            d.dashboard.threat_detection.rules_missing
+            if d.dashboard and d.dashboard.threat_detection
+            else None
+        ),
+    ),
+)
+
 WAN_BINARY_SENSORS: tuple[GatewayWanBinaryDescription, ...] = (
     GatewayWanBinaryDescription(
         key="up",
@@ -116,6 +131,8 @@ async def async_setup_entry(
     coordinator = entry.runtime_data.coordinator
     aggregate: list[BinarySensorEntity] = [GatewayConnectivity(coordinator)]
     aggregate.extend(GatewayBinarySensor(coordinator, d) for d in BINARY_SENSORS)
+    if coordinator.capabilities.dashboard:
+        aggregate.extend(GatewayBinarySensor(coordinator, d) for d in DASHBOARD_BINARY_SENSORS)
     async_add_entities(aggregate)
 
     syncers = [

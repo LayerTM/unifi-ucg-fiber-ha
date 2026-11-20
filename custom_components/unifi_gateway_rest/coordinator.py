@@ -15,6 +15,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .aiounifigw import (
     Capabilities,
+    Dashboard,
     Device,
     GatewayClient,
     GwApiError,
@@ -38,6 +39,7 @@ class GwData:
     device: Device
     health: Health | None
     sysinfo: SysInfo | None
+    dashboard: Dashboard | None = None
 
 
 class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
@@ -67,7 +69,7 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
     async def _optional[T](self, call: Callable[[], Awaitable[T]]) -> T | None:
         """Run a supplementary fetch, degrading to None on a scope/API error.
 
-        A capability denial or API error on health/sysinfo degrades that field to
+        A capability denial or API error on health/sysinfo/dashboard degrades that field to
         None rather than failing the whole update (the core device telemetry stays
         available). Auth (401) and connection errors still propagate so re-auth /
         retry fire.
@@ -80,9 +82,11 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
     async def _async_update_data(self) -> GwData:
         try:
             device = await self.client.get_device()
-            health, sysinfo = await asyncio.gather(
-                self._optional(self.client.get_health) if self.capabilities.health else _none(),
-                self._optional(self.client.get_sysinfo) if self.capabilities.sysinfo else _none(),
+            caps = self.capabilities
+            health, sysinfo, dashboard = await asyncio.gather(
+                self._optional(self.client.get_health) if caps.health else _none(),
+                self._optional(self.client.get_sysinfo) if caps.sysinfo else _none(),
+                self._optional(self.client.get_dashboard) if caps.dashboard else _none(),
             )
         except GwAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
@@ -104,7 +108,7 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
         # that is no longer served.
         if self.config_entry is not None:
             clear_cert_mismatch(self.hass, self.config_entry)
-        return GwData(device=device, health=health, sysinfo=sysinfo)
+        return GwData(device=device, health=health, sysinfo=sysinfo, dashboard=dashboard)
 
 
 async def _none() -> None:

@@ -63,6 +63,11 @@ if [ "$have_key" -eq 1 ]; then
   curl -sk --max-time 30 -H "X-API-Key: $UNIFI_API_KEY" \
     "$BASE/proxy/network/api/s/$SITE/stat/device" -o "$OUT/stat_device.apikey.json"
 
+  echo "[*] API-key: v2 site dashboard (WAN activity + threat detection widgets)"
+  curl -sk --max-time 30 -H "X-API-Key: $UNIFI_API_KEY" \
+    "$BASE/proxy/network/v2/api/site/$SITE/aggregated-dashboard?historySeconds=3600&widgets=wan_activity,cybersecure" \
+    -o "$OUT/aggregated_dashboard.apikey.json" || true
+
   echo "[*] API-key: Integration API /integration/v1/sites  (for comparison; telemetry-poor)"
   curl -sk --max-time 20 -H "X-API-Key: $UNIFI_API_KEY" \
     "$BASE/proxy/network/integration/v1/sites" -o "$OUT/integration_sites.json" || true
