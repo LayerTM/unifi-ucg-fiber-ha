@@ -6,11 +6,17 @@ on:
   schedule:
     - cron: "30 4 * * *"
 
+# Every `run:` under a pipefail shell: GitHub's default returns only the last
+# command of a pipe, so a failing producer would leave the step green.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   hacs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # hacs/action is a Docker action, so the runner pulls ghcr.io/hacs/action
       # while it sets the job up, before the first step. No step in this job can
       # fetch that image ahead of the runner, the way hassfest.yml does.

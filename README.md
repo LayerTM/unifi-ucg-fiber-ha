@@ -358,7 +358,9 @@ pinned fingerprint per config entry. `UNIFI_GW_PORT` overrides the default 443.
 
 Install the library with its extras — `pip install -e ".[dev,cli,mcp]"` for the
 client, CLI and MCP server, and `pip install -e ".[dev,ha]"` for the Home Assistant
-integration. Before opening a pull request, run what CI runs:
+integration — and the CI tools (ruff, mypy) at the versions CI uses, with
+`pip install --require-hashes --no-deps -r .github/ci-tools/requirements.txt`.
+Before opening a pull request, run what CI runs:
 
 - `ruff check .` and `ruff format --check .` for lint and formatting.
 - `mypy --strict` for the library, and `mypy --strict --python-version 3.14

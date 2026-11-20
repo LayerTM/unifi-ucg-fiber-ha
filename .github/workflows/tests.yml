@@ -3,6 +3,16 @@ name: tests
 on:
   push:
   pull_request:
+  # Daily as well: every dependency here floats to its newest release, so a
+  # release upstream can break this suite on a day nothing is pushed.
+  schedule:
+    - cron: "30 4 * * *"
+
+# Every `run:` under a pipefail shell: GitHub's default returns only the last
+# command of a pipe, so a failing producer would leave the step green.
+defaults:
+  run:
+    shell: bash
 
 jobs:
   test:
@@ -12,12 +22,15 @@ jobs:
       matrix:
         python-version: ["3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install
-        run: pip install -e ".[dev,cli,mcp]"
+        # The CI tools (mypy) come hash-locked from .github/ci-tools/requirements.txt.
+        run: |
+          pip install -e ".[dev,cli,mcp]"
+          pip install --require-hashes --no-deps -r .github/ci-tools/requirements.txt
       - name: Type check (strict)
         # No path argument: an explicit one OVERRIDES `files =` in pyproject.toml,
         # so the config could widen its scope while CI kept checking the old set.

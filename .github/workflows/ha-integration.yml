@@ -3,6 +3,16 @@ name: ha-integration
 on:
   push:
   pull_request:
+  # Daily as well: every dependency here floats to its newest release, so a
+  # release upstream can break this suite on a day nothing is pushed.
+  schedule:
+    - cron: "30 4 * * *"
+
+# Every `run:` under a pipefail shell: GitHub's default returns only the last
+# command of a pipe, so a failing producer would leave the step green.
+defaults:
+  run:
+    shell: bash
 
 jobs:
   integration:
@@ -24,13 +34,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
 
       - name: Install library + newest Home Assistant test stack
         if: matrix.ha == 'latest'
-        run: pip install -e ".[dev,ha]"
+        # The CI tools (mypy) come hash-locked from .github/ci-tools/requirements.txt.
+        run: |
+          pip install -e ".[dev,ha]"
+          pip install --require-hashes --no-deps -r .github/ci-tools/requirements.txt
 
       - name: Home Assistant is the newest release
         if: matrix.ha == 'latest'
