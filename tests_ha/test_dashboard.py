@@ -5,11 +5,13 @@ from __future__ import annotations
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
-from custom_components.unifi_gateway_rest.aiounifigw import Capabilities
+import pytest
+from custom_components.unifi_gateway_rest.aiounifigw import Capabilities, GwApiError, GwAuthError
 from custom_components.unifi_gateway_rest.const import DOMAIN
 from custom_components.unifi_gateway_rest.diagnostics import (
     async_get_config_entry_diagnostics,
 )
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant.common import MockConfigEntry
@@ -79,3 +81,32 @@ async def test_diagnostics_carry_the_dashboard(
     assert diag["capabilities"]["dashboard"] is True
     assert diag["dashboard"]["wan_quality"]["WAN"]["packet_loss_pct"] == 1.5
     assert diag["dashboard"]["threat_detection"]["threats"] == 2
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        GwApiError("bad request", status=400),
+        GwAuthError("unauthorized"),
+        GwApiError("server error", status=500),
+    ],
+    ids=["400", "401", "500"],
+)
+async def test_a_failing_dashboard_never_stops_the_entry(
+    hass: HomeAssistant, config_entry: MockConfigEntry, mock_client: AsyncMock, error: Exception
+) -> None:
+    """The real probe runs; only the optional dashboard fails."""
+    mock_client.get_dashboard = AsyncMock(side_effect=error)
+    config_entry.add_to_hass(hass)
+    with patch("custom_components.unifi_gateway_rest.GatewayClient", lambda *a, **k: mock_client):
+        assert await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert config_entry.state is ConfigEntryState.LOADED
+    uid = config_entry.unique_id
+    cpu = _entity(hass, "sensor", f"{uid}_cpu")
+    assert cpu is not None
+    assert hass.states.get(cpu).state == "20.0"
+    assert _entity(hass, "sensor", f"{uid}_wan_packet_loss") is None
+    assert _entity(hass, "binary_sensor", f"{uid}_ips_rules_missing") is None
+    assert not hass.config_entries.flow.async_progress()

@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 from .client import GatewayClient
-from .exceptions import GwApiError, GwCapabilityError
+from .exceptions import GwCapabilityError, GwConnectionError, GwError
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -32,19 +35,21 @@ async def _reachable(call: Callable[[], Awaitable[object]]) -> bool:
 
 
 async def _supported(call: Callable[[], Awaitable[object]]) -> bool:
-    """Like :func:`_reachable`, for an endpoint older firmware does not serve.
+    """Reachability of an optional endpoint: it never decides whether setup succeeds.
 
-    A 404 means this firmware has no such endpoint: the feature is absent, not
-    broken. Every other error propagates as with the core endpoints.
+    Any answer from the console other than success — absent on this firmware
+    (404), a query it rejects (400), a credential not allowed this endpoint
+    (401/403), a server error — means the feature is not offered, and the core
+    telemetry loads without it. Only an unreachable console propagates, because
+    then the core endpoints cannot be read either.
     """
     try:
         await call()
-    except GwCapabilityError:
-        return False
-    except GwApiError as err:
-        if err.status == 404:
-            return False
+    except GwConnectionError:
         raise
+    except GwError as err:
+        _LOGGER.debug("optional endpoint not available, its entities are skipped: %s", err)
+        return False
     return True
 
 
