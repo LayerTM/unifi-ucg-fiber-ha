@@ -38,6 +38,7 @@ class GatewaySensorDescription(SensorEntityDescription):
     """Aggregate/console sensor bound to a GwData accessor."""
 
     value_fn: Callable[[GwData], StateType | datetime]
+    available_fn: Callable[[GwData], bool] = lambda _: True
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -349,6 +350,25 @@ DASHBOARD_SENSORS: tuple[GatewaySensorDescription, ...] = (
     ),
 )
 
+BACKUP_FREQUENCIES = ["daily", "weekly", "monthly"]
+
+# The console's own backup schedule; created only when /api/system reports it.
+CONSOLE_BACKUP_SENSORS: tuple[GatewaySensorDescription, ...] = (
+    GatewaySensorDescription(
+        key="console_backup_frequency",
+        translation_key="console_backup_frequency",
+        device_class=SensorDeviceClass.ENUM,
+        options=BACKUP_FREQUENCIES,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: (
+            d.console_backup.frequency
+            if d.console_backup and d.console_backup.frequency in BACKUP_FREQUENCIES
+            else None
+        ),
+        available_fn=lambda d: d.console_backup is not None,
+    ),
+)
+
 WAN_QUALITY_SENSORS: tuple[GatewayWanQualitySensorDescription, ...] = (
     GatewayWanQualitySensorDescription(
         key="packet_loss",
@@ -379,7 +399,10 @@ async def async_setup_entry(
     coordinator = entry.runtime_data.coordinator
     dashboard = coordinator.capabilities.dashboard
     async_add_entities(
-        GatewaySensor(coordinator, d) for d in SENSORS + (DASHBOARD_SENSORS if dashboard else ())
+        GatewaySensor(coordinator, d)
+        for d in SENSORS
+        + (DASHBOARD_SENSORS if dashboard else ())
+        + (CONSOLE_BACKUP_SENSORS if coordinator.capabilities.console_backup else ())
     )
 
     def _wan_sensors(wan_id: str) -> list[Entity]:
@@ -421,6 +444,10 @@ class GatewaySensor(GatewayEntity, SensorEntity):
     @property
     def native_value(self) -> StateType | datetime:
         return self.entity_description.value_fn(self.coordinator.data)
+
+    @property
+    def available(self) -> bool:
+        return super().available and self.entity_description.available_fn(self.coordinator.data)
 
 
 class GatewayWanSensor(GatewayWanEntity, SensorEntity):

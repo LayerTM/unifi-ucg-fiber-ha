@@ -142,3 +142,17 @@ def test_dashboard_threat_detection() -> None:
         2,
     )
     assert threat.rules_missing is False
+
+
+def test_console_backup_from_the_session_payload() -> None:
+    """The console's own schedule is only in the payload a session receives."""
+    backup = SystemIdentity.from_api(_load("api_system_session.json")).backup
+    assert backup is not None
+    assert (backup.enabled, backup.frequency, backup.day_of_week, backup.hour) == (
+        True,
+        "weekly",
+        3,
+        2,
+    )
+    assert (backup.local_retention, backup.destinations) == (5, ("local",))
+    assert SystemIdentity.from_api(_load("api_system.json")).backup is None

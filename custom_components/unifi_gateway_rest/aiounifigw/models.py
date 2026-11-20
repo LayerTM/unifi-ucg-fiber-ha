@@ -114,14 +114,57 @@ def _now() -> float:
 
 
 @dataclass(frozen=True, slots=True)
+class ConsoleBackup:
+    """The UniFi OS console's own automatic backup (Settings → Control Plane → Backups).
+
+    Not the Network application's legacy auto-backup (``super_mgmt`` /
+    ``stat/sysinfo.autobackup``), which UniFi OS 6 no longer drives.
+    """
+
+    enabled: bool
+    frequency: str  # "daily" | "weekly" | "monthly" ("" when not reported)
+    day_of_week: int | None  # 0 = Sunday (weekly schedules)
+    day_of_month: int | None  # 1-28 (monthly schedules)
+    hour: int | None  # 0-23, console local time
+    local_retention: int | None  # backups kept on the console
+    destinations: tuple[str, ...]  # "local", "cloud"
+
+    @classmethod
+    def from_api(cls, d: dict[str, Any]) -> ConsoleBackup | None:
+        """Parse from the full /api/system payload; None when it has no schedule.
+
+        The schedule is only in the payload a console administrator's session
+        receives; an API key gets the short identity without it.
+        """
+        schedule = d.get("backupSchedule")
+        if not isinstance(schedule, dict):
+            return None
+        destinations = schedule.get("destinations")
+        return cls(
+            enabled=_b(d.get("autoBackupEnabled")),
+            frequency=_s(schedule.get("frequency")).lower(),
+            day_of_week=_i(schedule.get("dayOfWeek")),
+            day_of_month=_i(schedule.get("dayOfMonth")),
+            hour=_i(schedule.get("hour")),
+            local_retention=_i(schedule.get("localRetention")),
+            destinations=tuple(
+                x
+                for x in (destinations if isinstance(destinations, list) else [])
+                if isinstance(x, str)
+            ),
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class SystemIdentity:
-    """Public console identity from the short /api/system payload."""
+    """Console identity from /api/system (short with an API key, full in a session)."""
 
     mac: str
     name: str
     model_shortname: str
     device_state: str
     has_internet: bool
+    backup: ConsoleBackup | None = None  # only in the full payload
 
     @classmethod
     def from_api(cls, d: dict[str, Any]) -> SystemIdentity:
@@ -132,6 +175,7 @@ class SystemIdentity:
             model_shortname=_s(hw.get("shortname")),
             device_state=_s(d.get("deviceState")),
             has_internet=_b(d.get("hasInternet")),
+            backup=ConsoleBackup.from_api(d),
         )
 
 

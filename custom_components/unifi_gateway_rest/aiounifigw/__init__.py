@@ -15,6 +15,7 @@ from .exceptions import (
 )
 from .models import (
     DASHBOARD_WINDOW_S,
+    ConsoleBackup,
     Dashboard,
     Device,
     Health,
@@ -47,6 +48,7 @@ __all__ = [
     "AbstractAuth",
     "ApiKeyAuth",
     "Capabilities",
+    "ConsoleBackup",
     "Dashboard",
     "Device",
     "GatewayActionClient",

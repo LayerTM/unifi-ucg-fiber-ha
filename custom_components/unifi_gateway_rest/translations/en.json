@@ -165,6 +165,10 @@
       "ips_rules": { "name": "IPS rules" },
       "ips_updated": { "name": "IPS signatures updated" },
       "ips_threats": { "name": "Threats detected (last hour)" },
+      "console_backup_frequency": {
+        "name": "Console backup frequency",
+        "state": { "daily": "Daily", "weekly": "Weekly", "monthly": "Monthly" }
+      },
       "vpn_remote_active": { "name": "VPN remote users" },
       "temperature": { "name": "{name} temperature" },
       "wan_ip": { "name": "IP address" },
@@ -185,6 +189,7 @@
       "device_online": { "name": "Online" },
       "overheating": { "name": "Overheating" },
       "ips_rules_missing": { "name": "IPS rules missing" },
+      "console_auto_backup": { "name": "Console auto-backup" },
       "failover": { "name": "WAN failover active" },
       "update_available": { "name": "Firmware update available" },
       "vpn_site_to_site": { "name": "Site-to-site VPN" },
