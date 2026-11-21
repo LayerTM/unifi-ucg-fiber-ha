@@ -63,6 +63,7 @@ All notable changes to this project are documented here. The format is based on
   to a new database and statistics engine and cleared the statistics history.
   Every field the integration reads is still reported, with the same meaning,
   so no change is needed when the gateway updates.
+- **Verified on UniFi Network 11.0.104.**
 
 ## [0.2.5]
 
