@@ -240,7 +240,7 @@ network management.
 
 Any UniFi OS console running the UniFi Network application and reachable on your
 LAN. Verified against a **UCG-Fiber** (`UDMA6A8`) on **UniFi OS 6.0.17 / Network
-11.0.102**; the UDM / UXG / UCG family is expected to work — telemetry a given
+11.0.104**; the UDM / UXG / UCG family is expected to work — telemetry a given
 model does not report is simply omitted (entities are capability-gated). Devices
 are identified by their MAC, so one Home Assistant can monitor several gateways.
 
