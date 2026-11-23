@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.3.0]
 
 ### Added
 
@@ -49,7 +49,6 @@ All notable changes to this project are documented here. The format is based on
   entity of the official `unifi` integration, which also installs it; for the
   Network application the console reports only that an update exists, not its
   version. The README says so under *Known limitations*.
-
 - **Installation and removal describe the Home Assistant Marketplace.** From
   Home Assistant 2026.11 the integration is installed and uninstalled under
   Settings → Marketplace; the HACS steps remain for earlier releases.
@@ -64,6 +63,17 @@ All notable changes to this project are documented here. The format is based on
   Every field the integration reads is still reported, with the same meaning,
   so no change is needed when the gateway updates.
 - **Verified on UniFi Network 11.0.104.**
+- **README.** States that the integration is in the HACS default list, shows
+  the device page (a picture and an animated walkthrough with example data) and
+  links the companion UniFi UNAS integration.
+- **Build and tests.** The development `uv.lock`, which nothing installed
+  from, is removed; the CI tools are installed from hash-locked
+  requirements and every workflow is held to the same rules; the library test
+  suite refuses any network connection except loopback and pins the asyncio
+  fixture loop scope; a refused login is tested against a port no test server
+  can take; the integration is tested with Home Assistant's own test harness;
+  pull requests get a product-focused template. None of this changes the
+  installed integration.
 
 ## [0.2.5]
 
