@@ -75,6 +75,14 @@ All notable changes to this project are documented here. The format is based on
   pull requests get a product-focused template. None of this changes the
   installed integration.
 
+### Fixed
+
+- **Speedtest sensors after a gateway restart.** The gateway forgets its last
+  speedtest when it restarts and reports zero throughput and ping with it. The
+  download, upload and ping sensors showed those zeros as measurements of
+  0 Mbit/s, which skewed long-term statistics; they now stay unknown until a
+  speedtest has run, like the *Last speedtest* sensor.
+
 ## [0.2.5]
 
 ### Fixed

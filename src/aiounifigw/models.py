@@ -471,13 +471,18 @@ class Speedtest:
 
     @classmethod
     def from_api(cls, d: dict[str, Any]) -> Speedtest:
+        last_run = _epoch(d.get("speedtest_lastrun"))
+        # After a restart the gateway forgets its last result and reports
+        # ``speedtest_lastrun`` 0 together with zero throughput and ping. Those
+        # zeros mean "no result", not a measurement of 0 Mbit/s.
+        ran = last_run is not None
         return cls(
             status=_s(d.get("speedtest_status")) or "unknown",
-            download_mbps=_fo(d.get("xput_down")),
-            upload_mbps=_fo(d.get("xput_up")),
-            ping_ms=_i(d.get("speedtest_ping")),
+            download_mbps=_fo(d.get("xput_down")) if ran else None,
+            upload_mbps=_fo(d.get("xput_up")) if ran else None,
+            ping_ms=_i(d.get("speedtest_ping")) if ran else None,
             latency_ms=_i(d.get("latency")),
-            last_run=_epoch(d.get("speedtest_lastrun")),
+            last_run=last_run,
         )
 
 
