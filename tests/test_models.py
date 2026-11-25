@@ -131,7 +131,10 @@ def test_health_speedtest_idle(stat_health: dict[str, Any]) -> None:
     st = Health.from_api(stat_health["data"]).speedtest
     assert st.status == "Idle"
     assert st.last_run is None  # lastrun == 0 -> never
-    assert st.ping_ms == 0
+    # The gateway reports zeros after a restart; they are not a measurement.
+    assert st.download_mbps is None
+    assert st.upload_mbps is None
+    assert st.ping_ms is None
 
 
 def test_health_speedtest_completed() -> None:
