@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
+from typing import Any
 
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.helpers.device_registry import (
@@ -45,12 +46,14 @@ def add_new_entities(
     return _sync
 
 
-def hub_device_info(coordinator: GatewayDataUpdateCoordinator) -> DeviceInfo:
+def hub_device_fields(coordinator: GatewayDataUpdateCoordinator) -> dict[str, Any]:
     """Describe the gateway/console hub device.
 
     One definition, used both by the hub entities and by ``async_setup_entry``,
     which registers this device before any platform loads so that every
-    sub-device has a hub id to point at.
+    sub-device has a hub id to point at. These are keyword arguments rather than
+    a ``DeviceInfo`` because the registry takes them as keywords, and a
+    ``DeviceInfo`` must not be unpacked.
     """
     entry = coordinator.config_entry
     assert entry is not None
@@ -64,15 +67,15 @@ def hub_device_info(coordinator: GatewayDataUpdateCoordinator) -> DeviceInfo:
         connections = {(CONNECTION_NETWORK_MAC, format_mac(entry.unique_id))}
     name = (sysinfo.name if sysinfo else "") or data.device.name or "UniFi Gateway"
     sw_version = (sysinfo.console_version if sysinfo else "") or data.device.firmware_version
-    return DeviceInfo(
-        identifiers={(DOMAIN, entry.entry_id)},
-        connections=connections,
-        manufacturer=MANUFACTURER,
-        name=name,
-        model=data.device.model or None,
-        sw_version=sw_version or None,
-        configuration_url=config_url,
-    )
+    return {
+        "identifiers": {(DOMAIN, entry.entry_id)},
+        "connections": connections,
+        "manufacturer": MANUFACTURER,
+        "name": name,
+        "model": data.device.model or None,
+        "sw_version": sw_version or None,
+        "configuration_url": config_url,
+    }
 
 
 # Home Assistant 2026.8 replaced `via_device` (the hub's identifiers) with
@@ -87,15 +90,13 @@ def hub_device_info(coordinator: GatewayDataUpdateCoordinator) -> DeviceInfo:
 _ACCEPTS_VIA_DEVICE_ID = "via_device_id" in DeviceInfo.__annotations__
 
 
-def link_to_hub(info: DeviceInfo, coordinator: GatewayDataUpdateCoordinator) -> DeviceInfo:
-    """Attach a sub-device to the hub device of its config entry."""
+def hub_link(coordinator: GatewayDataUpdateCoordinator) -> dict[str, Any]:
+    """Return the field that attaches a sub-device to its config entry's hub."""
     entry = coordinator.config_entry
     assert entry is not None
     if _ACCEPTS_VIA_DEVICE_ID and (hub_id := coordinator.hub_device_id) is not None:
-        info["via_device_id"] = hub_id
-    else:
-        info["via_device"] = (DOMAIN, entry.entry_id)
-    return info
+        return {"via_device_id": hub_id}
+    return {"via_device": (DOMAIN, entry.entry_id)}
 
 
 class GatewayEntity(CoordinatorEntity[GatewayDataUpdateCoordinator]):
@@ -108,7 +109,7 @@ class GatewayEntity(CoordinatorEntity[GatewayDataUpdateCoordinator]):
         entry = coordinator.config_entry
         assert entry is not None
         self._attr_unique_id = f"{entry.unique_id}_{key}"
-        self._attr_device_info = hub_device_info(coordinator)
+        self._attr_device_info = DeviceInfo(**hub_device_fields(coordinator))
 
 
 class GatewayWanEntity(CoordinatorEntity[GatewayDataUpdateCoordinator]):
@@ -122,14 +123,12 @@ class GatewayWanEntity(CoordinatorEntity[GatewayDataUpdateCoordinator]):
         entry = coordinator.config_entry
         assert entry is not None
         self._attr_unique_id = f"{entry.unique_id}_{wan_id.lower()}_{key}"
-        self._attr_device_info = link_to_hub(
-            DeviceInfo(
-                identifiers={(DOMAIN, f"{entry.entry_id}_{wan_id.lower()}")},
-                manufacturer=MANUFACTURER,
-                model="WAN uplink",
-                name=wan_id,
-            ),
-            coordinator,
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"{entry.entry_id}_{wan_id.lower()}")},
+            manufacturer=MANUFACTURER,
+            model="WAN uplink",
+            name=wan_id,
+            **hub_link(coordinator),
         )
 
     @property
@@ -155,14 +154,12 @@ class GatewaySfpEntity(CoordinatorEntity[GatewayDataUpdateCoordinator]):
         self._attr_unique_id = f"{entry.unique_id}_sfp{port_idx}_{key}"
         port = self.port
         has_module = bool(port and port.present)
-        self._attr_device_info = link_to_hub(
-            DeviceInfo(
-                identifiers={(DOMAIN, f"{entry.entry_id}_sfp{port_idx}")},
-                manufacturer=port.vendor if has_module and port and port.vendor else MANUFACTURER,
-                model=(port.part if has_module and port and port.part else "SFP+ port"),
-                name=f"SFP Port {port_idx}",
-            ),
-            coordinator,
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"{entry.entry_id}_sfp{port_idx}")},
+            manufacturer=port.vendor if has_module and port and port.vendor else MANUFACTURER,
+            model=(port.part if has_module and port and port.part else "SFP+ port"),
+            name=f"SFP Port {port_idx}",
+            **hub_link(coordinator),
         )
 
     @property

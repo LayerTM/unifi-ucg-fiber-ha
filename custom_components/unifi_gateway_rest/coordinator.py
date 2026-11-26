@@ -81,7 +81,7 @@ class GatewayDataUpdateCoordinator(DataUpdateCoordinator[GwData]):
         self._backup_read_at: float | None = None
         self.hub_device_id: str | None = None
         """Device-registry id of the hub, set by `async_setup_entry` before the
-        platforms load. Sub-devices point at it (see `entity.link_to_hub`)."""
+        platforms load. Sub-devices point at it (see `entity.hub_link`)."""
 
     async def _optional[T](self, call: Callable[[], Awaitable[T]]) -> T | None:
         """Run a supplementary fetch, degrading to None when the console refuses it.
