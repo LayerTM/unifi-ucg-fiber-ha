@@ -15,7 +15,7 @@ import pytest
 
 _PACKAGE = Path(__file__).parents[1] / "custom_components" / "unifi_gateway_rest"
 _VENDORED = _PACKAGE / "aiounifigw"
-_MAPPING_METHODS = {"get", "items", "keys", "update"}
+_MAPPING_METHODS = {"copy", "get", "items", "keys", "pop", "setdefault", "update", "values"}
 _ATTRIBUTES = {"device_info", "_attr_device_info"}
 
 
@@ -120,6 +120,10 @@ def test_integration_never_uses_a_device_info_as_a_mapping() -> None:
         "info = DeviceInfo()\n'name' in info",
         "self._attr_device_info.get('name')",
         "entity.device_info['name']",
+        "info = DeviceInfo()\ninfo.copy()",
+        "info = DeviceInfo()\ninfo.pop()",
+        "info = DeviceInfo()\ninfo.setdefault()",
+        "info = DeviceInfo()\ninfo.values()",
     ],
 )
 def test_guard_sees_each_dict_style_use(use: str) -> None:
