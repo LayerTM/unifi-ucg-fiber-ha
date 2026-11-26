@@ -3,6 +3,15 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.1]
+
+### Fixed
+
+- Home Assistant 2026.12 logs that the integration uses `DeviceInfo` as a
+  dictionary, which stops working in Home Assistant 2027.12. Each device is now
+  described once, when it is created. The devices and how they are linked to the
+  gateway are unchanged.
+
 ## [0.3.0]
 
 ### Added
